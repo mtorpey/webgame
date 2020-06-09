@@ -1,0 +1,38 @@
+<html>
+
+  <script type="text/javascript" src="model.js"></script>
+  <script type="text/javascript" src="view.js"></script>
+  <script type="text/javascript" src="controller.js"></script>
+
+  <body>
+    <button onclick="controller.draw()">Draw!</button>
+    <canvas id="seaMapCanvas" width="400" height="400">
+      This text is displayed if your browser does not support HTML5 Canvas.
+    </canvas>
+    <table id="shipLog">
+      <thead>
+        <tr>
+          <th>Turn</th>
+          <th>L</th>
+          <th>R</th>
+          <th>Move</th>
+          <th>Notes</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>1</td>
+          <td></td>
+          <td></td>
+          <td>
+            <input id="nextMoveInput" type="text" />
+          </td>
+          <td>
+            <button id="nextMoveButton" onclick="controller.nextMoveSubmitted()">Submit</button>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </body>
+
+</html>
