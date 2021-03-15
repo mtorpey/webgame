@@ -2,7 +2,7 @@ class View {
     hexSide = 30;
     
     get canvas() {
-        return document.getElementById('seaMapCanvas');
+        return document.getElementById('gameCanvas');
     }
 
     get context() {
