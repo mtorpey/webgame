@@ -1,5 +1,11 @@
+const HEX_SIDE = 75;
+
+const COLOR_EMPTYSPACE = 'royalblue';
+const COLOR_GRID = 'dodgerblue';
+const COLOR_ISLAND = 'green';
+const GRID_LINE_WIDTH = 10;
+
 class View {
-    hexSide = 30;
     
     get canvas() {
         return document.getElementById('gameCanvas');
@@ -10,32 +16,50 @@ class View {
     }
 
     hexCenter(col, row) {
-        let x = 3 / 2 * this.hexSide * col;
-        let y = Math.sqrt(3) * this.hexSide * row;
+        let x = 3 / 2 * HEX_SIDE * col;
+        let y = Math.sqrt(3) * HEX_SIDE * row;
         if (col % 2 == 1) {
-            y += Math.sqrt(3)/2 * this.hexSide;
+            y += Math.sqrt(3)/2 * HEX_SIDE;
         }
         return {'x': x, 'y': y}
     }
 
-    drawMap() {
+    drawMap(model) {
+        console.log(model);
         let canvas = this.canvas;
         let context = this.context;
-        context.fillStyle = 'royalblue';
-        context.fillRect(0, 0, canvas.width, canvas.height);
-        let nrCols = canvas.width / (this.hexSide * 3 / 2);
-        let nrRows = canvas.height / (this.hexSide * Math.sqrt(3));
+        let nrCols = canvas.width / (HEX_SIDE * 3 / 2);
+        let nrRows = canvas.height / (HEX_SIDE * Math.sqrt(3));
         for (let col = 0; col < nrCols; col++) {
             for (let row = 0; row < nrRows; row++) {
-                this.drawHex(this.hexCenter(col, row), this.hexSide);
+                this.drawHex(this.hexCenter(col, row), HEX_SIDE, COLOR_GRID, COLOR_EMPTYSPACE);
             }
+        }
+        for (let tile of model.tiles) {
+            console.log(tile);
+            this.drawIsland(tile.name, tile.value, tile.col, tile.row);
         }
     }
 
-    drawHex(center, side) {
+    drawIsland(name, value, col, row) {
+        this.drawHex(this.hexCenter(col, row), HEX_SIDE, COLOR_GRID, COLOR_ISLAND);
+        this.writeIslandLabel(name, value, col, row);
+    }
+
+    writeIslandLabel(name, value, col, row) {
+        let center = this.hexCenter(col, row);
+        this.context.font = "30px Arial";
+        this.context.fillStyle = 'white';
+        this.context.textAlign = 'center';
+        this.context.fillText(name, center.x, center.y);
+        this.context.fillText(value, center.x, center.y + 30);
+    }
+
+    drawHex(center, side, strokeColor, fillColor) {
         let context = this.context;
-        context.strokeStyle = 'white';
-        context.lineWidth = '1';
+        context.strokeStyle = strokeColor;
+        context.fillStyle = fillColor;
+        context.lineWidth = GRID_LINE_WIDTH;
         let r32 = Math.sqrt(3)/2;
         let points = [
             {'x': -1/2, 'y': -r32},
@@ -52,25 +76,10 @@ class View {
         for (let i in points) {
             context.lineTo(x + points[i]['x']*side, y + points[i]['y']*side);
         }
+        context.lineTo(x + points[0]['x']*side, y + points[0]['y']*side);
+        context.lineTo(x + points[1]['x']*side, y + points[1]['y']*side);
+        context.fill();
         context.stroke();
     }
 
-    drawShip(ship) {
-        let context = this.context;
-        context.strokeStyle = 'brown';
-        context.lineWidth = '20';
-        let front = this.hexCenter(ship.bowHex.col, ship.bowHex.row);
-        let back = this.hexCenter(ship.sternHex.col, ship.sternHex.row);
-        context.beginPath();
-        context.moveTo(front['x'], front['y']);
-        context.lineTo(back['x'], back['y']);
-        context.stroke();
-
-        context.strokeStyle = 'white';
-        context.lineWidth = '5';
-        context.beginPath();
-        context.arc(front['x'], front['y'], 3, 0, Math.PI * 2, true);
-        context.stroke();
-        //context.fillRect(front['x']-5, front['y']-5, 10, 10);
-    }
 }

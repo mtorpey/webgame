@@ -1,101 +1,42 @@
 class Model {
-    ship1 = new Ship(new Hex(1, 2), 3, 1, 4);
+    #tiles;
 
-    get allShips() {
-        return [this.ship1];
+    constructor() {
+        let tonga = new Tile("Tonga", 0);
+        tonga.place(2, 3);
+        this.#tiles = [tonga];
     }
 
-    movementExecutionPhase(moveString) {
-        // TODO: check legality
-        // TODO: support multiple ships
-        for (let i in moveString) {
-            this.ship1.move(moveString[i]);
-        }
+    get tiles() {
+        return this.#tiles;
     }
 }
 
-class Ship {
-    #bowHex;
-    #attitude;
-    #nationality;
-    #shipClass;
-    
-    constructor(bowHex, attitude, nationality, shipClass) {
-        this.#bowHex = bowHex;
-        this.#attitude = attitude;
-        this.#nationality = nationality;
-        this.#shipClass = shipClass;
+function hexNeighbor(col, row, direction) {
+    let isEven = (col % 2 == 0) ? -1 : 0;
+    switch (direction) {
+    case 0: row -= 1; break;
+    case 1: col += 1; row += isEven; break;
+    case 2: col += 1; row += 1 + isEven; break;            
+    case 3: row += 1; break;
+    case 4: col -= 1; row += 1 + isEven; break;
+    case 5: col -= 1; row += isEven; break;
     }
-
-    get bowHex() { return this.#bowHex; }
-    get sternHex() {
-        let behind = ((this.#attitude - 1 + 3) % 6) + 1;
-        return this.bowHex.neighbor(behind)
-    }
-
-    move(letter) {
-        if (letter in [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]) {
-            let n = parseInt(letter);
-            for (let i = 0; i < n; i++) {
-                this.moveForward();
-            }
-        } else if (letter == 'L') {
-            this.turnLeft();
-        } else if (letter == 'R') {
-            this.turnRight();
-        } else {
-            console.log("Error: bad movement notation '" + letter + "'")
-        }
-    }
-
-    moveForward() {
-        this.#bowHex = this.#bowHex.neighbor(this.#attitude);
-    }
-
-    turnLeft() {
-        if (this.#attitude == 1) {
-            this.#attitude = 6
-        } else {
-            this.#attitude -= 1;
-        }
-    }
-
-    turnRight() {
-        if (this.#attitude == 6) {
-            this.#attitude = 1
-        } else {
-            this.#attitude += 1;
-        }
-    }
+    return {col: col, row: row};
 }
 
-class Hex {
-    #col; #row;
+class Tile {
+    name;
+    value;
+    row; col;
+
+    constructor(name, value) {
+        this.name = name;
+        this.value = value;
+    }
     
-    constructor(col, row) {
-        this.#col = col;
-        this.#row = row;
-    }
-
-    get col() {
-        return this.#col;
-    }
-    get row() {
-        return this.#row;
-    }
-
-    neighbor(direction) {
-        let col = this.col;
-        let row = this.row;
-        let isEven = (this.col % 2 == 0) ? -1 : 0;
-        switch (direction) {
-            case 1: row -= 1; break;
-            case 2: col += 1; row += isEven; break;
-            case 3: col += 1; row += 1 + isEven; break;            
-            case 4: row += 1; break;
-            case 5: col -= 1; row += 1 + isEven; break;
-            case 6: col -= 1; row += isEven; break;
-        }
-        return new Hex(col, row);
+    place(row, col) {
+        this.row = row;
+        this.col = col;
     }
 }
