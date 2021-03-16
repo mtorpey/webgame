@@ -1,4 +1,4 @@
-const HEX_SIDE = 75;
+const HEX_SIDE = 90;
 
 const COLOR_EMPTYSPACE = 'royalblue';
 const COLOR_GRID = 'dodgerblue';
@@ -28,8 +28,8 @@ class View {
         console.log(model);
         let canvas = this.canvas;
         let context = this.context;
-        let nrCols = canvas.width / (HEX_SIDE * 3 / 2);
-        let nrRows = canvas.height / (HEX_SIDE * Math.sqrt(3));
+        let nrCols = canvas.width / (HEX_SIDE * 3 / 2) + 1;
+        let nrRows = canvas.height / (HEX_SIDE * Math.sqrt(3)) + 1;
         for (let col = 0; col < nrCols; col++) {
             for (let row = 0; row < nrRows; row++) {
                 this.drawHex(this.hexCenter(col, row), HEX_SIDE, COLOR_GRID, COLOR_EMPTYSPACE);
@@ -37,22 +37,56 @@ class View {
         }
         for (let tile of model.tiles) {
             console.log(tile);
-            this.drawIsland(tile.name, tile.value, tile.col, tile.row);
+            this.drawIsland(tile);
         }
     }
 
-    drawIsland(name, value, col, row) {
-        this.drawHex(this.hexCenter(col, row), HEX_SIDE, COLOR_GRID, COLOR_ISLAND);
-        this.writeIslandLabel(name, value, col, row);
+    drawIsland(island) {
+        this.drawHex(this.hexCenter(island.col, island.row), HEX_SIDE, COLOR_GRID, COLOR_ISLAND);
+        this.writeIslandLabel(island.name, island.value, island.col, island.row);
+        for (let beach of island.beaches) {
+            this.drawBeach(island.col, island.row, beach);
+        }
     }
 
     writeIslandLabel(name, value, col, row) {
         let center = this.hexCenter(col, row);
-        this.context.font = "30px Arial";
+        this.context.font = "20px Arial";
         this.context.fillStyle = 'white';
         this.context.textAlign = 'center';
         this.context.fillText(name, center.x, center.y);
-        this.context.fillText(value, center.x, center.y + 30);
+        this.context.fillText(value, center.x, center.y + 20);
+    }
+
+    drawBeach(col, row, beach) {
+        let center = this.hexCenter(col, row);
+
+        let r32 = Math.sqrt(3)/2;
+        let edgeCenters = [
+            {'x': 0,    'y': -r32},
+            {'x': +3/4, 'y': -r32/2},
+            {'x': +3/4, 'y': +r32/2},
+            {'x': 0,    'y': +r32},
+            {'x': -3/4, 'y': +r32/2},
+            {'x': -1/2, 'y': -r32/2},
+        ];
+
+        let context = this.context;
+        for (let exit of beach.exits) {
+            let edgeCenter = edgeCenters[exit];
+            let x = edgeCenter.x * (HEX_SIDE - GRID_LINE_WIDTH/2) + center.x;
+            let y = edgeCenter.y * (HEX_SIDE - GRID_LINE_WIDTH/2) + center.y;
+        
+            context.beginPath();
+            context.fillStyle = 'yellow';
+            context.arc(
+                x, y,
+                HEX_SIDE / 3,
+                0 + exit * Math.PI / 3,
+                Math.PI + exit * Math.PI / 3
+            );
+            context.fill();
+        }
     }
 
     drawHex(center, side, strokeColor, fillColor) {

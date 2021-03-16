@@ -2,7 +2,7 @@ class Model {
     #tiles;
 
     constructor() {
-        let tonga = new Tile("Tonga", 0);
+        let tonga = new IslandTile("Tonga", 0, [new Beach([0], 3), new Beach([1,2], 3)]);
         tonga.place(2, 3);
         this.#tiles = [tonga];
     }
@@ -13,18 +13,54 @@ class Model {
 }
 
 class Tile {
-    name;
-    value;
     row; col;
 
-    constructor(name, value) {
-        this.name = name;
-        this.value = value;
-    }
-    
     place(row, col) {
         this.row = row;
         this.col = col;
+    }
+}
+
+class IslandTile extends Tile {
+    name;
+    value;
+    beaches;
+
+    /**
+     * Creates an island tile, but doesn't place it.
+     *
+     * @param {string} name Name of the island, e.g. "Tonga".
+     * @param {int} value How many points this is worth at end of game.
+     * @param {list of Beach objects} beaches on the island
+     */
+    constructor(name, value, beaches) {
+        super();
+        this.name = name;
+        this.value = value;
+        this.beaches = beaches;
+    }
+}
+
+class Beach {
+    exits;
+    capacity;
+    ships;
+
+    /**
+     * Creates an empty beach.
+     *
+     * @param {list of ints} exits Island edges that this beach's ships can use.
+     * @param {int} capacity How many ships this beach can hold.
+     */
+    constructor(exits, capacity) {
+        this.exits = exits;
+        this.capacity = capacity;
+        this.ships = [];
+    }
+
+    addShip(playerNo) {
+        console.assert(this.ships.length < this.capacity);
+        ships.push(playerNo);
     }
 }
 
