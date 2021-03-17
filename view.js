@@ -24,6 +24,21 @@ class View {
         return {'x': x, 'y': y}
     }
 
+    hexPoint(col, row, pointNo) {
+        let r32 = Math.sqrt(3)/2;
+        let points = [
+            {'x': -1/2, 'y': -r32},
+            {'x': +1/2, 'y': -r32},
+            {'x': +1,   'y': 0},
+            {'x': +1/2, 'y': +r32},
+            {'x': -1/2, 'y': +r32},
+            {'x': -1,   'y': 0},
+        ];
+        let center = this.hexCenter(col, row);
+        return {x: center.x + points[pointNo].x * HEX_SIDE,
+                y: center.y + points[pointNo].y * HEX_SIDE};
+    }
+
     drawMap(model) {
         console.log(model);
         let canvas = this.canvas;
@@ -32,7 +47,7 @@ class View {
         let nrRows = canvas.height / (HEX_SIDE * Math.sqrt(3)) + 1;
         for (let col = 0; col < nrCols; col++) {
             for (let row = 0; row < nrRows; row++) {
-                this.drawHex(this.hexCenter(col, row), HEX_SIDE, COLOR_GRID, COLOR_EMPTYSPACE);
+                this.drawHex(col, row, HEX_SIDE, COLOR_GRID, COLOR_EMPTYSPACE);
             }
         }
         for (let tile of model.tiles) {
@@ -42,7 +57,7 @@ class View {
     }
 
     drawIsland(island) {
-        this.drawHex(this.hexCenter(island.col, island.row), HEX_SIDE, COLOR_GRID, COLOR_ISLAND);
+        this.drawHex(island.col, island.row, HEX_SIDE, COLOR_GRID, COLOR_ISLAND);
         this.writeIslandLabel(island.name, island.value, island.col, island.row);
         for (let beach of island.beaches) {
             this.drawBeach(island.col, island.row, beach);
@@ -72,7 +87,8 @@ class View {
         ];
 
         let context = this.context;
-        for (let exit of beach.exits) {
+        if (beach.exits.length == 1) {
+            let exit = beach.exits[0];
             let edgeCenter = edgeCenters[exit];
             let x = edgeCenter.x * (HEX_SIDE - GRID_LINE_WIDTH/2) + center.x;
             let y = edgeCenter.y * (HEX_SIDE - GRID_LINE_WIDTH/2) + center.y;
@@ -86,32 +102,26 @@ class View {
                 Math.PI + exit * Math.PI / 3
             );
             context.fill();
+        } else if (beach.exits.length == 2) {
+            
         }
     }
 
-    drawHex(center, side, strokeColor, fillColor) {
+    drawHex(col, row, side, strokeColor, fillColor) {
         let context = this.context;
         context.strokeStyle = strokeColor;
         context.fillStyle = fillColor;
         context.lineWidth = GRID_LINE_WIDTH;
-        let r32 = Math.sqrt(3)/2;
-        let points = [
-            {'x': -1/2, 'y': -r32},
-            {'x': +1/2, 'y': -r32},
-            {'x': +1,   'y': 0},
-            {'x': +1/2, 'y': +r32},
-            {'x': -1/2, 'y': +r32},
-            {'x': -1,   'y': 0},
-        ];
-        let x = center['x'];
-        let y = center['y'];
         context.beginPath();
-        context.moveTo(x + points[0]['x']*side, y + points[0]['y']*side);
-        for (let i in points) {
-            context.lineTo(x + points[i]['x']*side, y + points[i]['y']*side);
+        let points = [];
+        for (let pointNo = 0; pointNo < 6; pointNo++) {
+            points.push(this.hexPoint(col, row, pointNo));
         }
-        context.lineTo(x + points[0]['x']*side, y + points[0]['y']*side);
-        context.lineTo(x + points[1]['x']*side, y + points[1]['y']*side);
+        context.moveTo(points[5].x, points[5].y);
+        for (let pointNo = 0; pointNo < 6; pointNo++) {
+            context.lineTo(points[pointNo].x, points[pointNo].y);
+        }
+        context.lineTo(points[0].x, points[0].y);
         context.fill();
         context.stroke();
     }
