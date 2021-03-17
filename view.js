@@ -1,6 +1,6 @@
 const HEX_SIDE = 90;
 
-const COLOR_EMPTYSPACE = 'royalblue';
+const COLOR_EMPTYSPACE = null;
 const COLOR_GRID = 'dodgerblue';
 const COLOR_ISLAND = 'green';
 const COLOR_BEACH = 'yellow';
@@ -47,14 +47,14 @@ class View {
         let context = this.context;
         let nrCols = canvas.width / (HEX_SIDE * 3 / 2) + 1;
         let nrRows = canvas.height / (HEX_SIDE * Math.sqrt(3)) + 1;
+        for (let tile of model.tiles) {
+            console.log(tile);
+            this.drawIsland(tile);
+        }
         for (let col = 0; col < nrCols; col++) {
             for (let row = 0; row < nrRows; row++) {
                 this.drawHex(col, row, HEX_SIDE, COLOR_GRID, COLOR_EMPTYSPACE);
             }
-        }
-        for (let tile of model.tiles) {
-            console.log(tile);
-            this.drawIsland(tile);
         }
     }
 
@@ -92,8 +92,8 @@ class View {
         if (beach.exits.length == 1) {
             let exit = beach.exits[0];
             let edgeCenter = edgeCenters[exit];
-            let x = edgeCenter.x * (HEX_SIDE - GRID_LINE_WIDTH/2) + center.x;
-            let y = edgeCenter.y * (HEX_SIDE - GRID_LINE_WIDTH/2) + center.y;
+            let x = edgeCenter.x * (HEX_SIDE) + center.x;
+            let y = edgeCenter.y * (HEX_SIDE) + center.y;
         
             context.beginPath();
             context.fillStyle = COLOR_BEACH;
@@ -105,7 +105,26 @@ class View {
             );
             context.fill();
         } else if (beach.exits.length == 2) {
-            
+            console.assert(beach.exits[0] + 1 === beach.exits[1]);
+            let cornerNo = beach.exits[0] + 1;
+
+            // Get the corner between the two beaches
+            let cornerPoint = this.hexPoint(col, row, cornerNo);
+            context.beginPath();
+            context.fillStyle = COLOR_BEACH;
+            context.moveTo(cornerPoint.x, cornerPoint.y);
+            context.arc(
+                cornerPoint.x, cornerPoint.y,
+                HEX_SIDE*2/3,
+                cornerNo * Math.PI / 3,
+                (cornerNo+2) * Math.PI / 3
+            );
+            context.fill();
+        } else {
+            console.assert(beach.exits.length == 3);
+            console.assert(beach.exits[0] + 1 === beach.exits[1]);
+            console.assert(beach.exits[0] + 2 === beach.exits[2]);
+            // TODO
         }
     }
 
@@ -124,8 +143,12 @@ class View {
             context.lineTo(points[pointNo].x, points[pointNo].y);
         }
         context.lineTo(points[0].x, points[0].y);
-        context.fill();
-        context.stroke();
+        if (fillColor) {
+            context.fill();
+        }
+        if (strokeColor) {
+            context.stroke();
+        }
     }
 
 }
