@@ -1,6 +1,7 @@
 const HEX_SIDE = 90;
 
 const COLOR_EMPTYSPACE = null;
+const COLOR_BACKGROUND = 'royalblue';
 const COLOR_GRID = 'dodgerblue';
 const COLOR_ISLAND = 'green';
 const COLOR_BEACH = 'yellow';
@@ -45,6 +46,9 @@ class View {
         console.log(model);
         let canvas = this.canvas;
         let context = this.context;
+        context.fillStyle = COLOR_BACKGROUND;
+        context.fillRect(0, 0, canvas.width, canvas.height);
+
         let nrCols = canvas.width / (HEX_SIDE * 3 / 2) + 1;
         let nrRows = canvas.height / (HEX_SIDE * Math.sqrt(3)) + 1;
         for (let tile of model.tiles) {
