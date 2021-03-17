@@ -7,6 +7,15 @@
     border: 1pt solid;
 }
 
-#gameCanvasContainer>button {
-    position: absolute;
+#gameCanvasContainer>div.btnGroup {
+   font-size: 0;
+   position: absolute;
+}
+
+#gameCanvasContainer>div.btnGroup>button {
+    font-size: 100%;
+}
+
+button.shipButton {
+    opacity: 1.0;
 }

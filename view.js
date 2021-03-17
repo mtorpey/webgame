@@ -1,4 +1,4 @@
-const HEX_SIDE = 90;
+const HEX_SIDE = 100;
 
 const COLOR_EMPTYSPACE = null;
 const COLOR_BACKGROUND = 'royalblue';
@@ -110,6 +110,7 @@ class View {
         context.fillStyle = COLOR_BEACH;
 
         if (beach.exits.length == 1) {
+            // Single beach
             let exit = beach.exits[0];
             let edgeCenter = this.hexMidEdge(col, row, exit);
             context.arc(
@@ -118,7 +119,9 @@ class View {
                 0 + exit * Math.PI / 3,
                 Math.PI + exit * Math.PI / 3
             );
+            this.createBeachButtons(col, row, exit, beach.capacity);
         } else if (beach.exits.length == 2) {
+            // Double beach
             console.assert(beach.exits[0] + 1 === beach.exits[1]);
             let cornerNo = beach.exits[0] + 1;
 
@@ -131,7 +134,9 @@ class View {
                 cornerNo * Math.PI / 3,
                 (cornerNo+2) * Math.PI / 3
             );
+            this.createBeachButtons(col, row, beach.exits[0] + 0.5, beach.capacity);
         } else {
+            // Triple beach
             console.assert(beach.exits.length == 3);
             console.assert(beach.exits[0] + 1 === beach.exits[1]);
             console.assert(beach.exits[0] + 2 === beach.exits[2]);
@@ -158,15 +163,40 @@ class View {
                           points[0].x, points[0].y,
                           HEX_SIDE * 3 / 2);
             context.lineTo(points[1].x, points[1].y);
+            this.createBeachButtons(col, row, firstExit + 1, beach.capacity);
         }
         context.fill();
-        let button = document.createElement("button");
-        button.classList.add("shipButton");
-        button.style.top = this.hexCenter(col, row).y + "px";
-        button.style.left = this.hexCenter(col, row).x + "px";
-        button.style.height = HEX_SIDE / 4 + "px";
-        button.innerHTML = "hello";
-        this.canvasContainer.appendChild(button);
+    }
+
+    createBeachButtons(col, row, direction, capacity) {
+        let angle = direction * Math.PI / 3;
+        let hexCenter = this.hexCenter(col, row);
+        let r32 = Math.sqrt(3)/2;
+
+        let x = hexCenter.x + Math.sin(angle) * HEX_SIDE * r32*0.75;
+        let y = hexCenter.y - Math.cos(angle) * HEX_SIDE * r32*0.75;
+        let buttonHeight = HEX_SIDE / 6;
+        let buttonWidth = HEX_SIDE / 3;
+
+        let btnGroup = document.createElement("div");
+        btnGroup.classList.add("btnGroup");
+
+        for (let i = 0; i < capacity; i++) {
+            let button = document.createElement("button");
+            button.classList.add("shipButton");
+            button.style.width = buttonWidth + "px";
+            button.style.height = buttonHeight + "px";
+            //button.style.backgroundColor = COLOR_BEACH;
+            button.innerHTML = "";
+            btnGroup.appendChild(button);
+        }
+
+        btnGroup.style.width = buttonWidth + "px";
+        btnGroup.style.height = buttonHeight * capacity + "px";
+        btnGroup.style.left = x - buttonWidth/2 + "px";
+        btnGroup.style.top = y - buttonHeight/2 * capacity + "px";
+        btnGroup.style.transform = "rotate(" + (angle+Math.PI/2) + "rad)"
+        this.canvasContainer.appendChild(btnGroup);
     }
 
     drawHex(col, row, side, strokeColor, fillColor) {
