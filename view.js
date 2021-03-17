@@ -3,6 +3,8 @@ const HEX_SIDE = 90;
 const COLOR_EMPTYSPACE = 'royalblue';
 const COLOR_GRID = 'dodgerblue';
 const COLOR_ISLAND = 'green';
+const COLOR_BEACH = 'yellow';
+
 const GRID_LINE_WIDTH = 10;
 
 class View {
@@ -94,7 +96,7 @@ class View {
             let y = edgeCenter.y * (HEX_SIDE - GRID_LINE_WIDTH/2) + center.y;
         
             context.beginPath();
-            context.fillStyle = 'yellow';
+            context.fillStyle = COLOR_BEACH;
             context.arc(
                 x, y,
                 HEX_SIDE / 3,
