@@ -1,23 +1,23 @@
 class Model {
-    #tiles;
+    tiles;
 
     constructor() {
         let tonga = new IslandTile("Tonga", 0, [new Beach([0], 2), new Beach([1, 2], 3), new Beach([3, 4, 5], 5)]);
-        tonga.place(2, 3);
-        this.#tiles = [tonga];
-    }
-
-    get tiles() {
-        return this.#tiles;
+        //let tonga = new IslandTile("Tonga", 0, [new Beach([0], 3), new Beach([1], 3), new Beach([2], 3), new Beach([3], 3), new Beach([4], 3), new Beach([5], 3)]);
+        tonga.place(2, 3, 0);
+        this.tiles = [tonga];
     }
 }
 
 class Tile {
-    row; col;
+    row;
+    col;
+    rotation;
 
-    place(row, col) {
+    place(row, col, rotation) {
         this.row = row;
         this.col = col;
+        this.rotation = rotation;
     }
 }
 
@@ -38,6 +38,21 @@ class IslandTile extends Tile {
         this.name = name;
         this.value = value;
         this.beaches = beaches;
+    }
+}
+
+class SeaTile extends Tile {
+    exits;
+
+    /**
+     * Creates a sea tile, but doesn't place it.
+     *
+     * @param {list of 6 ints} exits Direction you leave if you enter at edge i
+     */
+    constructor(exits) {
+        super();
+        // TODO: check these are symmetric?
+        this.exits = exits;
     }
 }
 
