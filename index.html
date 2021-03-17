@@ -12,12 +12,16 @@
   </head>
 
   <body>
-    <canvas id="gameCanvas" width="1280" height="720">
-      This text is displayed if your browser does not support HTML5 Canvas.
-    </canvas>
+    <div id="gameCanvasContainer">
+      <canvas id="gameCanvas" width="1280" height="720">
+        This text is displayed if your browser does not support HTML5 Canvas.
+      </canvas>
+    </div>
     
     <br>
-    <button onclick="controller.draw()">Draw!</button>
+    <div>
+      <button onclick="controller.draw()">Draw!</button>
+    </div>
     <!-- <script src="/socket.io/socket.io.js"></script> -->
   </body>
 

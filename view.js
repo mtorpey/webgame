@@ -14,6 +14,10 @@ class View {
         return document.getElementById('gameCanvas');
     }
 
+    get canvasContainer() {
+        return document.getElementById('gameCanvasContainer');
+    }
+
     get context() {
         return this.canvas.getContext('2d');
     }
@@ -89,11 +93,13 @@ class View {
 
     writeIslandLabel(name, value, col, row) {
         let center = this.hexCenter(col, row);
-        this.context.font = "20px Arial";
+        this.context.font = HEX_SIDE/4 + "px Arial";
         this.context.fillStyle = 'white';
         this.context.textAlign = 'center';
         this.context.fillText(name, center.x, center.y);
-        this.context.fillText(value, center.x, center.y + 20);
+        if (value > 0) {
+            this.context.fillText(value, center.x, center.y + 20);
+        }
     }
 
     drawBeach(col, row, beach) {
@@ -154,6 +160,13 @@ class View {
             context.lineTo(points[1].x, points[1].y);
         }
         context.fill();
+        let button = document.createElement("button");
+        button.classList.add("shipButton");
+        button.style.top = this.hexCenter(col, row).y + "px";
+        button.style.left = this.hexCenter(col, row).x + "px";
+        button.style.height = HEX_SIDE / 4 + "px";
+        button.innerHTML = "hello";
+        this.canvasContainer.appendChild(button);
     }
 
     drawHex(col, row, side, strokeColor, fillColor) {
