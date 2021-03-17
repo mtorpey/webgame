@@ -2,7 +2,7 @@ class Model {
     #tiles;
 
     constructor() {
-        let tonga = new IslandTile("Tonga", 0, [new Beach([0], 3), new Beach([1,2], 3)]);
+        let tonga = new IslandTile("Tonga", 0, [new Beach([0], 3), new Beach([1, 2], 3), new Beach([3, 4, 5], 3)]);
         tonga.place(2, 3);
         this.#tiles = [tonga];
     }

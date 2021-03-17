@@ -28,6 +28,7 @@ class View {
     }
 
     hexPoint(col, row, pointNo) {
+        pointNo %= 6;
         let r32 = Math.sqrt(3)/2;
         let points = [
             {'x': -1/2, 'y': -r32},
@@ -38,8 +39,24 @@ class View {
             {'x': -1,   'y': 0},
         ];
         let center = this.hexCenter(col, row);
-        return {x: center.x + points[pointNo].x * HEX_SIDE,
-                y: center.y + points[pointNo].y * HEX_SIDE};
+        return {
+            x: center.x + points[pointNo].x * HEX_SIDE,
+            y: center.y + points[pointNo].y * HEX_SIDE
+        };
+    }
+
+    hexMidEdge(col, row, direction) {
+        return this.midPoint(
+            this.hexPoint(col, row, direction),
+            this.hexPoint(col, row, direction + 1)
+        );
+    }
+    
+    midPoint(point1, point2) {
+        return {
+            x: (point1.x + point2.x) / 2,
+            y: (point1.y + point2.y) / 2
+        };
     }
 
     drawMap(model) {
@@ -82,54 +99,61 @@ class View {
     drawBeach(col, row, beach) {
         let center = this.hexCenter(col, row);
 
-        let r32 = Math.sqrt(3)/2;
-        let edgeCenters = [
-            {'x': 0,    'y': -r32},
-            {'x': +3/4, 'y': -r32/2},
-            {'x': +3/4, 'y': +r32/2},
-            {'x': 0,    'y': +r32},
-            {'x': -3/4, 'y': +r32/2},
-            {'x': -1/2, 'y': -r32/2},
-        ];
-
         let context = this.context;
+        context.beginPath();
+        context.fillStyle = COLOR_BEACH;
+
         if (beach.exits.length == 1) {
             let exit = beach.exits[0];
-            let edgeCenter = edgeCenters[exit];
-            let x = edgeCenter.x * (HEX_SIDE) + center.x;
-            let y = edgeCenter.y * (HEX_SIDE) + center.y;
-        
-            context.beginPath();
-            context.fillStyle = COLOR_BEACH;
+            let edgeCenter = this.hexMidEdge(col, row, exit);
             context.arc(
-                x, y,
+                edgeCenter.x, edgeCenter.y,
                 HEX_SIDE / 3,
                 0 + exit * Math.PI / 3,
                 Math.PI + exit * Math.PI / 3
             );
-            context.fill();
         } else if (beach.exits.length == 2) {
             console.assert(beach.exits[0] + 1 === beach.exits[1]);
             let cornerNo = beach.exits[0] + 1;
 
             // Get the corner between the two beaches
             let cornerPoint = this.hexPoint(col, row, cornerNo);
-            context.beginPath();
-            context.fillStyle = COLOR_BEACH;
             context.moveTo(cornerPoint.x, cornerPoint.y);
             context.arc(
                 cornerPoint.x, cornerPoint.y,
-                HEX_SIDE*2/3,
+                HEX_SIDE * 2 / 3,
                 cornerNo * Math.PI / 3,
                 (cornerNo+2) * Math.PI / 3
             );
-            context.fill();
         } else {
             console.assert(beach.exits.length == 3);
             console.assert(beach.exits[0] + 1 === beach.exits[1]);
             console.assert(beach.exits[0] + 2 === beach.exits[2]);
-            // TODO
+
+            let firstExit = beach.exits[0];
+            let points = [
+                this.midPoint(
+                    this.hexMidEdge(col, row, firstExit),
+                    this.hexPoint(col, row, firstExit)
+                ),
+                this.hexPoint(col, row, firstExit + 1),
+                this.hexPoint(col, row, firstExit + 2),
+                this.midPoint(
+                    this.hexMidEdge(col, row, firstExit + 2),
+                    this.hexPoint(col, row, firstExit + 3)
+                )
+            ]
+            let control = this.hexMidEdge(col, row, firstExit + 1);
+            context.moveTo(points[0].x, points[0].y);
+            context.lineTo(points[1].x, points[1].y);
+            context.lineTo(points[2].x, points[2].y);
+            context.lineTo(points[3].x, points[3].y);
+            context.arcTo(control.x, control.y,
+                          points[0].x, points[0].y,
+                          HEX_SIDE * 3 / 2);
+            context.lineTo(points[1].x, points[1].y);
         }
+        context.fill();
     }
 
     drawHex(col, row, side, strokeColor, fillColor) {
