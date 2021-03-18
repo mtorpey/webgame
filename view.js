@@ -3,12 +3,35 @@ const HEX_SIDE = 100;
 const COLOR_EMPTYSPACE = null;
 const COLOR_BACKGROUND = 'royalblue';
 const COLOR_GRID = 'dodgerblue';
-const COLOR_ISLAND = 'green';
-const COLOR_BEACH = 'yellow';
+const COLOR_ISLAND = 'darkgreen';
+const COLOR_BEACH = 'wheat';
+const COLOR_PLAYER = [
+    'limegreen',
+    'red',
+    'yellow',
+    'purple',
+    'orange',
+    'blue'
+];
 
 const GRID_LINE_WIDTH = 10;
 
 class View {
+
+    slotButtons;
+
+    /**
+     * What to do when the model changes.
+     *
+     * @param obj JSON object describing the changes
+     */
+    modelChanged(obj) {
+        console.log(obj);
+        switch(obj.type) {
+        case ChangeType.SHIP_ADDED: this.addShip(obj.col, obj.row, obj.direction, obj.slotNo, obj.playerNo); break;
+        case ChangeType.NEXT_PLAYER: console.log("Guess it's " + obj.currentPlayer + "'s turn!"); break;
+        }
+    }
     
     get canvas() {
         return document.getElementById('gameCanvas');
@@ -20,6 +43,22 @@ class View {
 
     get context() {
         return this.canvas.getContext('2d');
+    }
+
+    saveShipButton(col, row, direction, slotNo, button) {
+        if (!this.slotButtons)
+            this.slotButtons = [];
+        if (!this.slotButtons[col])
+            this.slotButtons[col] = [];
+        if (!this.slotButtons[col][row])
+            this.slotButtons[col][row] = [];
+        if (!this.slotButtons[col][row][direction])
+            this.slotButtons[col][row][direction] = [];
+        this.slotButtons[col][row][direction][slotNo] = button;
+    }
+
+    getShipButton(col, row, direction, slotNo) {
+        return this.slotButtons[col][row][direction][slotNo];
     }
 
     hexCenter(col, row) {
@@ -73,7 +112,6 @@ class View {
         let nrCols = canvas.width / (HEX_SIDE * 3 / 2) + 1;
         let nrRows = canvas.height / (HEX_SIDE * Math.sqrt(3)) + 1;
         for (let tile of model.tiles) {
-            console.log(tile);
             this.drawIsland(tile);
         }
         for (let col = 0; col < nrCols; col++) {
@@ -119,7 +157,7 @@ class View {
                 0 + exit * Math.PI / 3,
                 Math.PI + exit * Math.PI / 3
             );
-            this.createBeachButtons(col, row, exit, beach.capacity);
+            this.createBeachButtons(col, row, exit, beach.ships);
         } else if (beach.exits.length == 2) {
             // Double beach
             console.assert(beach.exits[0] + 1 === beach.exits[1]);
@@ -134,7 +172,7 @@ class View {
                 cornerNo * Math.PI / 3,
                 (cornerNo+2) * Math.PI / 3
             );
-            this.createBeachButtons(col, row, beach.exits[0] + 0.5, beach.capacity);
+            this.createBeachButtons(col, row, beach.exits[0] + 0.5, beach.ships);
         } else {
             // Triple beach
             console.assert(beach.exits.length == 3);
@@ -163,12 +201,14 @@ class View {
                           points[0].x, points[0].y,
                           HEX_SIDE * 3 / 2);
             context.lineTo(points[1].x, points[1].y);
-            this.createBeachButtons(col, row, firstExit + 1, beach.capacity);
+            this.createBeachButtons(col, row, firstExit + 1, beach.ships);
         }
         context.fill();
     }
 
-    createBeachButtons(col, row, direction, capacity) {
+    createBeachButtons(col, row, direction, ships) {
+        let capacity = ships.length;
+        
         let angle = direction * Math.PI / 3;
         let hexCenter = this.hexCenter(col, row);
         let r32 = Math.sqrt(3)/2;
@@ -183,11 +223,19 @@ class View {
 
         for (let i = 0; i < capacity; i++) {
             let button = document.createElement("button");
-            button.classList.add("shipButton");
+            button.classList = "slotButton";
             button.style.width = buttonWidth + "px";
             button.style.height = buttonHeight + "px";
+            //button.disabled = false;
             //button.style.backgroundColor = COLOR_BEACH;
-            button.innerHTML = "";
+            button.innerHTML = ships[i];
+
+            button.col = col;
+            button.row = row;
+            button.direction = direction;
+            button.slotNo = i;
+            button.addEventListener("click", () => controller.beachButtonClicked(button));
+            this.saveShipButton(col, row, direction, i, button);
             btnGroup.appendChild(button);
         }
 
@@ -197,6 +245,13 @@ class View {
         btnGroup.style.top = y - buttonHeight/2 * capacity + "px";
         btnGroup.style.transform = "rotate(" + (angle+Math.PI/2) + "rad)"
         this.canvasContainer.appendChild(btnGroup);
+    }
+
+    addShip(col, row, direction, slotNo, playerNo) {
+        let button = this.getShipButton(col, row, direction, slotNo);
+        button.style.backgroundColor = COLOR_PLAYER[playerNo];
+        button.disabled = true;
+        button.classList = ["ship"];
     }
 
     drawHex(col, row, side, strokeColor, fillColor) {

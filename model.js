@@ -1,11 +1,79 @@
+const TurnPhase = {
+    INITIAL_PLACEMENT: "initial placement",
+    START_OF_TURN: "start",
+    EXPANDING: "expanding",
+    READY_TO_SAIL: "ready to sail",
+    LANDING: "landing",
+    GAME_OVER: "game over"
+}
+
+const ChangeType = {
+    SHIP_ADDED: "ship added",
+    NEXT_PLAYER: "next player"
+}
+
 class Model {
     tiles;
+    names;
+    nrPlayers;
+    currentPlayer;
+    turnPhase;
 
-    constructor() {
-        let tonga = new IslandTile("Tonga", 0, [new Beach([0], 2), new Beach([1, 2], 3), new Beach([3, 4, 5], 5)]);
-        //let tonga = new IslandTile("Tonga", 0, [new Beach([0], 3), new Beach([1], 3), new Beach([2], 3), new Beach([3], 3), new Beach([4], 3), new Beach([5], 3)]);
-        tonga.place(2, 3, 0);
-        this.tiles = [tonga];
+    tonga;
+
+    constructor(names) {
+        // Setup players
+        this.names = names;
+        this.nrPlayers = names.length;
+        console.assert(this.nrPlayers in [2,3,4,5,6]);
+        this.currentPlayer = 0;
+        this.turnPhase = TurnPhase.INITIAL_PLACEMENT;
+
+        // Setup tiles
+        //let tonga = new IslandTile("Tonga", 0, [new Beach([0], 2), new Beach([1, 2], 3), new Beach([3, 4, 5], 5)]);
+        this.tonga = new IslandTile(
+            "Tonga",
+            0,
+            [
+                new Beach([0], 3),
+                new Beach([1], 3),
+                new Beach([2], 3),
+                new Beach([3], 3),
+                new Beach([4], 3),
+                new Beach([5], 3)
+            ]
+        );
+        this.tonga.place(2, 3, 0);
+        this.tiles = [this.tonga];
+    }
+
+    initialPlacement(direction, slotNo) {
+        this.tonga.addShip(direction, slotNo, this.currentPlayer);
+        this.broadcastChange({
+            type: ChangeType.SHIP_ADDED,
+            col: this.tonga.col,
+            row: this.tonga.row,
+            direction: direction,
+            slotNo: slotNo,
+            playerNo: this.currentPlayer
+        });
+
+        this.currentPlayer++;
+        this.currentPlayer %= this.nrPlayers;
+        this.broadcastChange({
+            type: ChangeType.NEXT_PLAYER,
+            currentPlayer: this.currentPlayer
+        });
+    }
+
+    // Sending updates to the view
+    // TODO: replace this with socket.io when model is server-side
+    listener;
+    registerChangeListener(listener) {
+        this.listener = listener;
+    }
+    broadcastChange(obj) {
+        this.listener.modelChanged(obj);
     }
 }
 
@@ -39,6 +107,10 @@ class IslandTile extends Tile {
         this.value = value;
         this.beaches = beaches;
     }
+
+    addShip(direction, slotNo, playerNo) {
+        this.beaches[direction].addShip(slotNo, playerNo);
+    }
 }
 
 class SeaTile extends Tile {
@@ -54,6 +126,7 @@ class SeaTile extends Tile {
         // TODO: check these are symmetric?
         this.exits = exits;
     }
+
 }
 
 class Beach {
@@ -69,13 +142,17 @@ class Beach {
      */
     constructor(exits, capacity) {
         this.exits = exits;
-        this.capacity = capacity;
+        this.capacity = capacity;  // TODO: make getter?
         this.ships = [];
+        for (let i = 0; i < capacity; i++) {
+            this.ships.push(null);
+        }
     }
 
-    addShip(playerNo) {
-        console.assert(this.ships.length < this.capacity);
-        ships.push(playerNo);
+    addShip(slotNo, playerNo) {
+        console.assert(this.ships.length === this.capacity);
+        console.assert(this.ships[slotNo] === null);
+        this.ships[slotNo] = playerNo;
     }
 }
 

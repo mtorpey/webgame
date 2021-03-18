@@ -8,14 +8,24 @@
 }
 
 #gameCanvasContainer>div.btnGroup {
-   font-size: 0;
-   position: absolute;
+    font-size: 0;
+    position: absolute;
 }
 
 #gameCanvasContainer>div.btnGroup>button {
-    font-size: 100%;
+    border: 1px solid gray;
+    font-size: 8px;  /* should set this dynamically if used */
 }
 
-button.shipButton {
+button.slotButton {
+    background-color: wheat;
     opacity: 1.0;
+}
+
+button.slotButton:hover:enabled {
+    background-color: tan;
+}
+
+button.ship {
+    border-radius: 50%
 }
