@@ -1,14 +1,15 @@
 const TurnPhase = {
-    INITIAL_PLACEMENT: "initial placement",
-    START_OF_TURN: "start",
-    EXPANDING: "expanding",
-    READY_TO_SAIL: "ready to sail",
-    LANDING: "landing",
+    INITIAL_PLACEMENT: "initial placement",  // place 2 ships each on Tonga
+    START_OF_TURN: "start",  // choose an island to expand (or royal/special)
+    EXPANDING: "expanding",  // choose the beaches to place your new ships
+    READY_TO_SAIL: "ready to sail",  // choose a beach to sail from
+    LANDING: "landing",  // choose which beaches the ships land on
     GAME_OVER: "game over"
 }
 
 const ChangeType = {
     SHIP_ADDED: "ship added",
+    ISLAND_SELECTED: "island selected",  // for expansion
     NEXT_PLAYER: "next player",
     VALID_MOVES: "valid moves"
 }
@@ -21,6 +22,7 @@ class Model {
     turnPhase;
 
     tonga;
+    expansionIsland;
 
     constructor(names) {
         // Setup players
@@ -49,6 +51,9 @@ class Model {
     }
 
     initialPlacement(direction, slotNo) {
+        console.assert(this.turnPhase === TurnPhase.INITIAL_PLACEMENT);
+
+        // Add the ship
         this.tonga.addShip(direction, slotNo, this.currentPlayer);
         this.broadcastChange({
             type: ChangeType.SHIP_ADDED,
@@ -59,6 +64,7 @@ class Model {
             playerNo: this.currentPlayer
         });
 
+        // Advance player turn
         this.currentPlayer++;
         this.currentPlayer %= this.nrPlayers;
         this.broadcastChange({
@@ -66,24 +72,71 @@ class Model {
             currentPlayer: this.currentPlayer
         });
 
+        // Is initial placement done?
+        if (this.tonga.nrShipsOnTile(this.currentPlayer) === 2) {
+            this.turnPhase = TurnPhase.START_TURN;
+        }
+
+        // Broadcast valid moves
+        this.broadcastChange(this.getValidMoves());
+    }
+
+    chooseExpansionIsland(col, row) {
+        console.assert(this.turnPhase === TurnPhase.START_TURN);
+
+        // Get the island
+        let island = getTile(col, row);
+        console.assert(island.nrShipsOnTile(this.currentPlayer) > 0);
+        console.assert(island.hasEmptyBeachSlots());
+
+        // Set it as the island for expansion this turn
+        this.expansionIsland = island;
+
+        // Broadcast change
         this.broadcastChange({
-            type: ChangeType.VALID_MOVES,
-            beachSlots: this.getValidMovesInitialPlacement()
+            type: ChangeType.ISLAND_SELECTED,
+            col: island.col,
+            row: island.row
         });
     }
 
+    getTile(col, row) {
+        // Linear search - perhaps a map would be better, but there's only 32.
+        for (let tile of this.tiles) {
+            if (tile.col === col && tile.row === row) {
+                return tile;
+            }
+        }
+        return null;
+    }
+
+    getValidMoves() {
+        let obj;
+
+        // Get the appropriate types of moves
+        switch(this.turnPhase) {
+        case TurnPhase.INITIAL_PLACEMENT: obj = this.getValidMovesInitialPlacement(); break;
+        case TurnPhase.START_TURN: obj = this.getValidMovesStartTurn(); break;
+        default: console.assert(false, "turn phase '" + obj.type + "' cannot be handled");
+        }
+
+        // Mark this as a "valid moves" object for sending to the view
+        obj.type = ChangeType.VALID_MOVES;
+        return obj;
+    }
+    
     /**
-     * List of valid slots for the current player to place a ship during initial placement.
+     * Object describing valid slots for the current player to place a ship during initial placement.
      */
     getValidMovesInitialPlacement() {
-        let validMoves = [];
+        let validSlots = [];
         for (let b = 0; b < this.tonga.beaches.length; b++) {
             let beach = this.tonga.beaches[b];
             let sum = beach.ships.filter(x => x != null).length;
             if (sum < 2) {
                 for (let slotNo = 0; slotNo < beach.capacity; slotNo++) {
                     if (beach.ships[slotNo] === null) {
-                        validMoves.push({
+                        validSlots.push({
                             col: this.tonga.col,
                             row: this.tonga.row,
                             direction: b,
@@ -93,7 +146,28 @@ class Model {
                 }
             }
         }
-        return validMoves;
+        return {beachSlots: validSlots};
+    }
+
+    /**
+     * Object describing valid moves at start of a regular turn.
+     *
+     * This will include:
+     * - coords of islands you can expand at;
+     * - coords of islands you can claim as Royal Islands;
+     * - the "special" option to remove all ships and get a new island.
+     */
+    getValidMovesStartTurn() {
+        let expandableIslands = [];
+        // TODO: check player stocks (15 ships each) - max expansion
+        // TODO: special case for empty stock
+        for (let tile of this.tiles) {
+            if (tile.nrShipsOnTile(this.currentPlayer) >= 1
+                && tile.hasEmptyBeachSlots()) {
+                expandableIslands.push({col: tile.col, row: tile.row});
+            }
+        }
+        return {expandableIslands: expandableIslands};
     }
 
     // Sending updates to the view
@@ -116,6 +190,10 @@ class Tile {
         this.row = row;
         this.col = col;
         this.rotation = rotation;
+    }
+
+    nrShipsOnTile(playerNo = null) {
+        throw new Error("This should be overridden!");
     }
 }
 
@@ -141,6 +219,25 @@ class IslandTile extends Tile {
     addShip(direction, slotNo, playerNo) {
         this.beaches[direction].addShip(slotNo, playerNo);
     }
+
+    nrShipsOnTile(playerNo = null) {
+        let nr = 0;
+        for (let beach of this.beaches) {
+            //if (beach) {
+                nr += beach.nrShipsOnBeach(playerNo);
+            //}
+        }
+        return nr;
+    }
+
+    hasEmptyBeachSlots() {
+        for (let beach of this.beaches) {
+            if (beach.hasEmptyBeachSlots()) {
+                return true;
+            }
+        }
+        return false;
+    }
 }
 
 class SeaTile extends Tile {
@@ -157,6 +254,9 @@ class SeaTile extends Tile {
         this.exits = exits;
     }
 
+    nrShipsOnTile(playerNo = null) {
+        return 0;
+    }
 }
 
 class Beach {
@@ -183,6 +283,26 @@ class Beach {
         console.assert(this.ships.length === this.capacity);
         console.assert(this.ships[slotNo] === null);
         this.ships[slotNo] = playerNo;
+    }
+
+    nrShipsOnBeach(playerNo = null) {
+        let nr = 0;
+        for (let i = 0; i < this.capacity; i++) {
+            if (this.ships[i] === playerNo
+                || (this.ships[i] != null && playerNo === null)) {
+                nr++;
+            }
+        }
+        return nr;
+    }
+
+    hasEmptyBeachSlots() {
+        for (let i = 0; i < this.capacity; i++) {
+            if (this.ships[i] === null) {
+                return true;
+            }
+        }
+        return false;
     }
 }
 

@@ -19,6 +19,7 @@ const GRID_LINE_WIDTH = 10;
 class View {
 
     slotButtons;
+    islandNameButtons = new Map();
 
     /**
      * What to do when the model changes.
@@ -86,6 +87,15 @@ class View {
         }
     }
 
+    saveIslandNameButton(col, row, button) {
+        this.islandNameButtons.set(col + "," + row, button);
+    }
+
+    getIslandNameButton(col, row) {
+        console.log(this.islandNameButtons);
+        return this.islandNameButtons.get(col + "," + row);
+    }
+
     hexCenter(col, row) {
         let x = 3 / 2 * HEX_SIDE * col;
         let y = Math.sqrt(3) * HEX_SIDE * row;
@@ -148,12 +158,14 @@ class View {
 
     drawIsland(island) {
         this.drawHex(island.col, island.row, HEX_SIDE, COLOR_GRID, COLOR_ISLAND);
-        this.writeIslandLabel(island.name, island.value, island.col, island.row);
+        //this.writeIslandLabel(island.name, island.value, island.col, island.row);
+        this.createIslandNameButton(island.name, island.col, island.row);
         for (let beach of island.beaches) {
             this.drawBeach(island.col, island.row, beach);
         }
     }
 
+    // TODO: remove now we have button?
     writeIslandLabel(name, value, col, row) {
         let center = this.hexCenter(col, row);
         this.context.font = HEX_SIDE/4 + "px Arial";
@@ -163,6 +175,31 @@ class View {
         if (value > 0) {
             this.context.fillText(value, center.x, center.y + 20);
         }
+    }
+
+    createIslandNameButton(name, col, row) {
+        let center = this.hexCenter(col, row);
+
+        let buttonHeight = HEX_SIDE * 0.5;
+        let buttonWidth = HEX_SIDE * 0.75;
+
+        let x = center.x - buttonWidth / 2;
+        let y = center.y - buttonHeight / 2;
+
+        let button = document.createElement("button");
+        button.classList = "islandName";
+        button.style.width = buttonWidth + "px";
+        button.style.height = buttonHeight + "px";
+        button.disabled = true;
+        button.innerHTML = name;
+        button.style.top = y + "px";
+        button.style.left = x + "px";
+
+        button.col = col;
+        button.row = row;
+        button.addEventListener("click", (e) => console.log(e.target));
+        this.saveIslandNameButton(col, row, button);
+        this.canvasContainer.appendChild(button);
     }
 
     drawBeach(col, row, beach) {
@@ -287,9 +324,20 @@ class View {
         this.applySlotButtons((b) => {b.disabled = true;});
 
         // Enable the beach slot buttons described in the object
-        for (let slot of obj.beachSlots) {
-            let button = this.getSlotButton(slot.col, slot.row, slot.direction, slot.slotNo);
-            button.disabled = false;
+        if (obj.beachSlots) {
+            for (let slot of obj.beachSlots) {
+                let button = this.getSlotButton(slot.col, slot.row, slot.direction, slot.slotNo);
+                button.disabled = false;
+            }
+        }
+
+        // Islands that can be selected for expansion
+        if (obj.expandableIslands) {
+            for (let island of obj.expandableIslands) {
+                let button = this.getIslandNameButton(island.col, island.row);
+                console.log(button);
+                button.disabled = false;
+            }
         }
     }
 

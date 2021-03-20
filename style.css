@@ -14,16 +14,17 @@
 
 /*#gameCanvasContainer>div.btnGroup>button*/
 button.slotButton {
-    border: 1px solid dimgray;
     /*font-size: 8px;  /* should set this dynamically if used */
 }
 
 button.slotButton:enabled {
+    border: 1px solid dimgray;
     background-color: burlywood;
     opacity: 1.0;
 }
 
 button.slotButton:disabled {
+    border: 1px solid gray;
     background-color: wheat;
 }
 
@@ -33,4 +34,19 @@ button.slotButton:hover:enabled {
 
 button.ship {
     border-radius: 50%
+}
+
+button.islandName {
+    position: absolute;
+    font: 20px Arial;
+}
+
+button.islandName:enabled {
+    border-radius: 10%
+}
+
+button.islandName:disabled {
+    background-color: darkgreen;
+    color: white;
+    border: none;
 }
