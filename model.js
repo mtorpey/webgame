@@ -9,7 +9,8 @@ const TurnPhase = {
 
 const ChangeType = {
     SHIP_ADDED: "ship added",
-    NEXT_PLAYER: "next player"
+    NEXT_PLAYER: "next player",
+    VALID_MOVES: "valid moves"
 }
 
 class Model {
@@ -64,6 +65,35 @@ class Model {
             type: ChangeType.NEXT_PLAYER,
             currentPlayer: this.currentPlayer
         });
+
+        this.broadcastChange({
+            type: ChangeType.VALID_MOVES,
+            beachSlots: this.getValidMovesInitialPlacement()
+        });
+    }
+
+    /**
+     * List of valid slots for the current player to place a ship during initial placement.
+     */
+    getValidMovesInitialPlacement() {
+        let validMoves = [];
+        for (let b = 0; b < this.tonga.beaches.length; b++) {
+            let beach = this.tonga.beaches[b];
+            let sum = beach.ships.filter(x => x != null).length;
+            if (sum < 2) {
+                for (let slotNo = 0; slotNo < beach.capacity; slotNo++) {
+                    if (beach.ships[slotNo] === null) {
+                        validMoves.push({
+                            col: this.tonga.col,
+                            row: this.tonga.row,
+                            direction: b,
+                            slotNo: slotNo
+                        });
+                    }
+                }
+            }
+        }
+        return validMoves;
     }
 
     // Sending updates to the view

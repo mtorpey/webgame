@@ -12,14 +12,19 @@
     position: absolute;
 }
 
-#gameCanvasContainer>div.btnGroup>button {
-    border: 1px solid gray;
-    font-size: 8px;  /* should set this dynamically if used */
+/*#gameCanvasContainer>div.btnGroup>button*/
+button.slotButton {
+    border: 1px solid dimgray;
+    /*font-size: 8px;  /* should set this dynamically if used */
 }
 
-button.slotButton {
-    background-color: wheat;
+button.slotButton:enabled {
+    background-color: burlywood;
     opacity: 1.0;
+}
+
+button.slotButton:disabled {
+    background-color: wheat;
 }
 
 button.slotButton:hover:enabled {

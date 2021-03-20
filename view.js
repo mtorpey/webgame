@@ -29,7 +29,9 @@ class View {
         console.log(obj);
         switch(obj.type) {
         case ChangeType.SHIP_ADDED: this.addShip(obj.col, obj.row, obj.direction, obj.slotNo, obj.playerNo); break;
-        case ChangeType.NEXT_PLAYER: console.log("Guess it's " + obj.currentPlayer + "'s turn!"); break;
+        case ChangeType.NEXT_PLAYER: break;  // TODO: track this properly
+        case ChangeType.VALID_MOVES: this.presentValidMoves(obj); break;
+        default: console.assert(false, "change type '" + obj.type + "' cannot be handled");
         }
     }
     
@@ -45,7 +47,7 @@ class View {
         return this.canvas.getContext('2d');
     }
 
-    saveShipButton(col, row, direction, slotNo, button) {
+    saveSlotButton(col, row, direction, slotNo, button) {
         if (!this.slotButtons)
             this.slotButtons = [];
         if (!this.slotButtons[col])
@@ -57,8 +59,31 @@ class View {
         this.slotButtons[col][row][direction][slotNo] = button;
     }
 
-    getShipButton(col, row, direction, slotNo) {
+    getSlotButton(col, row, direction, slotNo) {
         return this.slotButtons[col][row][direction][slotNo];
+    }
+
+    /**
+     * Apply a function to every slot button in the view.
+     *
+     * This is a deep nested array with holes, so is a bit complicated.
+     */
+    applySlotButtons(f) {
+        for (let column of this.slotButtons) {
+            if (column) {
+                for (let island of column) {
+                    if (island) {
+                        for (let beach of island) {
+                            if (beach) {
+                                for (let slotButton of beach) {
+                                    f(slotButton);
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
     }
 
     hexCenter(col, row) {
@@ -235,7 +260,7 @@ class View {
             button.direction = direction;
             button.slotNo = i;
             button.addEventListener("click", () => controller.beachButtonClicked(button));
-            this.saveShipButton(col, row, direction, i, button);
+            this.saveSlotButton(col, row, direction, i, button);
             btnGroup.appendChild(button);
         }
 
@@ -248,10 +273,24 @@ class View {
     }
 
     addShip(col, row, direction, slotNo, playerNo) {
-        let button = this.getShipButton(col, row, direction, slotNo);
+        let button = this.getSlotButton(col, row, direction, slotNo);
         button.style.backgroundColor = COLOR_PLAYER[playerNo];
         button.disabled = true;
         button.classList = ["ship"];
+    }
+
+    /**
+     * Configure buttons to allow only the given moves.
+     */
+    presentValidMoves(obj) {
+        // Disable all beach slot buttons
+        this.applySlotButtons((b) => {b.disabled = true;});
+
+        // Enable the beach slot buttons described in the object
+        for (let slot of obj.beachSlots) {
+            let button = this.getSlotButton(slot.col, slot.row, slot.direction, slot.slotNo);
+            button.disabled = false;
+        }
     }
 
     drawHex(col, row, side, strokeColor, fillColor) {
