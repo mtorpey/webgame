@@ -20,7 +20,7 @@ class View {
 
     slotButtons;
     islandNameButtons = new Map();
-    beachSailButtons = new Map();
+    sailButtons = new Map();
 
     /**
      * What to do when the model changes.
@@ -109,16 +109,16 @@ class View {
         this.islandNameButtons.forEach(f);
     }
 
-    saveBeachSailButton(col, row, beachNo, button) {
-        this.beachSailButtons.set(col + "," + row + "," + beachNo, button);
+    saveSailButton(col, row, exitDirection, button) {
+        this.sailButtons.set(col + "," + row + "," + exitDirection, button);
     }
 
-    getBeachSailButton(col, row, beachNo) {
-        return this.beachSailButtons.get(col + "," + row + "," + beachNo);
+    getSailButton(col, row, exitDirection) {
+        return this.sailButtons.get(col + "," + row + "," + exitDirection);
     }
 
-    applyBeachSailButtons(f) {
-        this.beachSailButtons.forEach(f);
+    applySailButtons(f) {
+        this.sailButtons.forEach(f);
     }
 
     hexCenter(col, row) {
@@ -185,8 +185,9 @@ class View {
         this.drawHex(island.col, island.row, HEX_SIDE, COLOR_GRID, COLOR_ISLAND);
         //this.writeIslandLabel(island.name, island.value, island.col, island.row);
         this.createIslandNameButton(island.name, island.col, island.row);
-        for (let beach of island.beaches) {
-            this.drawBeach(island.col, island.row, beach);
+        for (let beachNo = 0; beachNo < island.beaches.length; beachNo++) {
+            let beach = island.beaches[beachNo];
+            this.drawBeach(island.col, island.row, beachNo, beach);
         }
     }
 
@@ -227,7 +228,7 @@ class View {
         this.canvasContainer.appendChild(button);
     }
 
-    drawBeach(col, row, beach) {
+    drawBeach(col, row, beachNo, beach) {
         let center = this.hexCenter(col, row);
 
         let context = this.context;
@@ -244,7 +245,7 @@ class View {
                 0 + exit * Math.PI / 3,
                 Math.PI + exit * Math.PI / 3
             );
-            this.createBeachButtons(col, row, exit, beach.ships);
+            this.createSlotButtons(col, row, beachNo, exit, beach.ships);
         } else if (beach.exits.length == 2) {
             // Double beach
             console.assert(beach.exits[0] + 1 === beach.exits[1]);
@@ -259,7 +260,7 @@ class View {
                 cornerNo * Math.PI / 3,
                 (cornerNo+2) * Math.PI / 3
             );
-            this.createBeachButtons(col, row, beach.exits[0] + 0.5, beach.ships);
+            this.createSlotButtons(col, row, beachNo, beach.exits[0] + 0.5, beach.ships);
         } else {
             // Triple beach
             console.assert(beach.exits.length == 3);
@@ -288,12 +289,17 @@ class View {
                           points[0].x, points[0].y,
                           HEX_SIDE * 3 / 2);
             context.lineTo(points[1].x, points[1].y);
-            this.createBeachButtons(col, row, firstExit + 1, beach.ships);
+            this.createSlotButtons(col, row, beachNo, firstExit + 1, beach.ships);
         }
         context.fill();
+
+        // Create the sail buttons
+        for (let exitDirection of beach.exits) {
+            this.createSailButton(col, row, beachNo, exitDirection)
+        }
     }
 
-    createBeachButtons(col, row, direction, ships) {
+    createSlotButtons(col, row, beachNo, direction, ships) {
         let capacity = ships.length;
         
         let angle = direction * Math.PI / 3;
@@ -308,11 +314,7 @@ class View {
         let btnGroup = document.createElement("div");
         btnGroup.classList.add("btnGroup");
 
-        let beachNo = 0;
-        while (this.getSlotButton(col, row, beachNo, 0)) {
-            beachNo++;
-        }
-
+        // Create slot buttons
         for (let i = 0; i < capacity; i++) {
             let button = document.createElement("button");
             button.classList = "slotButton";
@@ -330,13 +332,23 @@ class View {
             btnGroup.appendChild(button);
         }
 
-        // Set up slot buttons
+        // Set up slot button group
         btnGroup.style.width = buttonWidth + "px";
         btnGroup.style.height = buttonHeight * capacity + "px";
         btnGroup.style.left = x - buttonWidth/2 + "px";
         btnGroup.style.top = y - buttonHeight/2 * capacity + "px";
         btnGroup.style.transform = "rotate(" + (angle+Math.PI/2) + "rad)"
         this.canvasContainer.appendChild(btnGroup);
+    }
+
+    createSailButton(col, row, beachNo, exitDirection) {
+        let angle = exitDirection * Math.PI / 3;
+        let hexCenter = this.hexCenter(col, row);
+        let r32 = Math.sqrt(3)/2;
+
+        let x = hexCenter.x + Math.sin(angle) * HEX_SIDE * r32*0.9;
+        let y = hexCenter.y - Math.cos(angle) * HEX_SIDE * r32*0.9;
+        let buttonWidth = HEX_SIDE / 3;
 
         // Create sail button
         x = hexCenter.x + Math.sin(angle) * HEX_SIDE * r32*0.9;
@@ -353,8 +365,9 @@ class View {
         sailButton.col = col;
         sailButton.row = row;
         sailButton.beachNo = beachNo;
+        sailButton.exitDirection = exitDirection;
         sailButton.addEventListener("click", () => controller.sailButtonClicked(sailButton));
-        this.saveBeachSailButton(col, row, beachNo, sailButton);
+        this.saveSailButton(col, row, beachNo, sailButton);
         this.canvasContainer.appendChild(sailButton);
     }
 
@@ -372,7 +385,7 @@ class View {
         // Disable all beach slot buttons
         this.applySlotButtons((b) => {b.disabled = true;});
         this.applyIslandNameButtons((b) => {b.disabled = true;});
-        this.applyBeachSailButtons((b) => {b.disabled = true;});
+        this.applySailButtons((b) => {b.disabled = true;});
 
         // Enable the beach slot buttons described in the object
         if (obj.beachSlots) {
@@ -391,9 +404,14 @@ class View {
         }
 
         // Beaches that are ready to sail
-        if (obj.fullBeaches) {
-            for (let beach of obj.fullBeaches) {
-                let button = this.getBeachSailButton(beach.col, beach.row, beach.beachNo);
+        if (obj.beachExits) {
+            for (let exit of obj.beachExits) {
+                let button = this.getSailButton(
+                    exit.col,
+                    exit.row,
+                    //exit.beachNo,  // this shouldn't be necessary
+                    exit.exitDirection
+                );
                 button.disabled = false;
             }
         }

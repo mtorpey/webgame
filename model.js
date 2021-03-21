@@ -155,7 +155,7 @@ class Model {
         this.turnPhase = TurnPhase.READY_TO_SAIL;
 
         let obj = this.getValidMovesReadyToSail();
-        if (obj.fullBeaches.length == 0) {
+        if (obj.beachExits.length == 0) {
             // Turn finished
             this.nextPlayer();
             this.turnPhase = TurnPhase.START_OF_TURN;
@@ -265,20 +265,28 @@ class Model {
     /**
      * Object describing valid moves during "ready to sail" phase.
      *
-     * This will give the beaches that are full, and which therefore need to
-     * sail before end of turn.  The player needs to choose which one to do
-     * first.
+     * This will give all the exits from all beaches that are full, and which
+     * therefore need to sail before end of turn.  The player needs to choose
+     * since the order is important, and the direction from beaches with
+     * multiple exits.
      */
     getValidMovesReadyToSail() {
-        let fullBeaches = [];
+        let beachExits = [];
         for (let tile of this.tiles) {
             for (let b = 0; b < tile.beaches.length; b++) {
                 if (!tile.beaches[b].hasEmptyBeachSlots()) {
-                    fullBeaches.push({col: tile.col, row: tile.row, beachNo: b});
+                    for (let exitDirection of tile.beaches[b].exits) {
+                        beachExits.push({
+                            col: tile.col,
+                            row: tile.row,
+                            //beachNo: b,  // this shouldn't be necessary
+                            exitDirection: exitDirection
+                        });
+                    }
                 }
             }
         }
-        return {fullBeaches: fullBeaches};
+        return {beachExits: beachExits};
     }
 
     // Sending updates to the view

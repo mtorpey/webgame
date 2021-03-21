@@ -24,7 +24,7 @@ class Controller {
     }
 
     sailButtonClicked(button) {
-        console.log(button.col, button.row, button.beachNo);
+        console.log(button.col, button.row, button.beachNo, button.exitDirection);
         button.blur();
     }
 
