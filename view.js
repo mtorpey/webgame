@@ -31,9 +31,11 @@ class View {
         console.log(obj);
         switch(obj.type) {
         case ChangeType.SHIP_ADDED: this.addShip(obj.col, obj.row, obj.beachNo, obj.slotNo, obj.playerNo); break;
+        case ChangeType.BEACH_EMPTIED: this.emptyBeach(obj.col, obj.row, obj.beachNo); break;
+        case ChangeType.ISLAND_SELECTED: break;  // For now, do nothing.  Highlight maybe?
+        case ChangeType.TILE_ADDED: this.drawIsland(obj.tile); break;
         case ChangeType.NEXT_PLAYER: break;  // TODO: track this properly
         case ChangeType.VALID_MOVES: this.presentValidMoves(obj); break;
-        case ChangeType.ISLAND_SELECTED: break;  // For now, do nothing.  Highlight maybe?
         default: console.assert(false, "change type '" + obj.type + "' cannot be handled");
         }
     }
@@ -184,7 +186,7 @@ class View {
     drawIsland(island) {
         this.drawHex(island.col, island.row, HEX_SIDE, COLOR_GRID, COLOR_ISLAND);
         //this.writeIslandLabel(island.name, island.value, island.col, island.row);
-        this.createIslandNameButton(island.name, island.col, island.row);
+        this.createIslandNameButton(island.name, island.value, island.col, island.row);
         for (let beachNo = 0; beachNo < island.beaches.length; beachNo++) {
             let beach = island.beaches[beachNo];
             this.drawBeach(island.col, island.row, beachNo, beach);
@@ -203,7 +205,7 @@ class View {
         }
     }
 
-    createIslandNameButton(name, col, row) {
+    createIslandNameButton(name, value, col, row) {
         let center = this.hexCenter(col, row);
 
         let buttonHeight = HEX_SIDE * 0.5;
@@ -217,7 +219,7 @@ class View {
         button.style.width = buttonWidth + "px";
         button.style.height = buttonHeight + "px";
         button.disabled = true;
-        button.innerHTML = name;
+        button.innerHTML = name + (value > 0 ? "\n" + value : "");
         button.style.top = y + "px";
         button.style.left = x + "px";
 
@@ -376,6 +378,15 @@ class View {
         button.style.backgroundColor = COLOR_PLAYER[playerNo];
         button.disabled = true;
         button.classList = ["ship"];
+    }
+
+    emptyBeach(col, row, beachNo) {
+        let slotNo = 0;
+        let button;
+        while (button = this.getSlotButton(col, row, beachNo, slotNo++)) {
+            button.classList = ["slotButton"];
+            button.style.backgroundColor = null;
+        }
     }
 
     /**

@@ -18,13 +18,15 @@ class Controller {
             this.initialPlacement(button.beachNo, button.slotNo); break;
         case TurnPhase.EXPANDING:
             this.expandAtSlot(button.beachNo, button.slotNo); break;
+        case TurnPhase.LANDING:
+            console.log("Ship should land at", button.col, button.row, button.beachNo, button.slotNo); break;
         default: console.assert(false, "beach button click in phase '" + this.model.turnPhase + "' cannot be handled");
         }
         button.blur();
     }
 
     sailButtonClicked(button) {
-        console.log(button.col, button.row, button.beachNo, button.exitDirection);
+        this.model.sailFromExit(button.col, button.row, button.exitDirection);
         button.blur();
     }
 

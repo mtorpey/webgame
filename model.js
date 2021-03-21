@@ -9,13 +9,16 @@ const TurnPhase = {
 
 const ChangeType = {
     SHIP_ADDED: "ship added",
+    BEACH_EMPTIED: "beach emptied",
     ISLAND_SELECTED: "island selected",  // for expansion
+    TILE_ADDED: "tile added",
     NEXT_PLAYER: "next player",
     VALID_MOVES: "valid moves"
 }
 
 class Model {
     tiles;
+    tileSupply;
     names;
     nrPlayers;
     currentPlayer;
@@ -27,6 +30,8 @@ class Model {
     shipsToAddInExpansion;
     beachesAvailableForExpansion;
 
+    sailingFleet;
+
     constructor(names) {
         // Setup players
         this.names = names;
@@ -37,6 +42,7 @@ class Model {
 
         // Setup tiles
         //let tonga = new IslandTile("Tonga", 0, [new Beach([0], 2), new Beach([1, 2], 3), new Beach([3, 4, 5], 5)]);
+        this.tiles = [];
         this.tonga = new IslandTile(
             "Tonga",
             0,
@@ -49,8 +55,25 @@ class Model {
                 new Beach([5], 3)
             ]
         );
-        this.tonga.place(2, 3, 0);
-        this.tiles = [this.tonga];
+        this.placeTile(3, 2, 0, this.tonga);
+
+        // Tiles in the supply
+        this.tileSupply = [
+            new IslandTile("Britain", 5, [new Beach([0, 1], 5), new Beach([3], 2)]),
+            new IslandTile("Ireland", 3, [new Beach([3, 4, 5], 4), new Beach([1, 2], 2)])
+        ];
+        this.tileSupply = this.tileSupply.sort(() => Math.random() - 0.5);
+    }
+
+    placeTile(col, row, rotation, tile) {
+        tile.place(col, row, rotation);
+        this.tiles.push(tile);
+    }
+
+    placeRandomTile(col, row, rotation) {
+        let tile = this.tileSupply.pop();
+        console.assert(tile);
+        this.placeTile(col, row, rotation, tile);
     }
 
     initialPlacement(beachNo, slotNo) {
@@ -162,6 +185,43 @@ class Model {
         }
     }
 
+    sailFromExit(col, row, direction) {
+        console.assert(this.turnPhase === TurnPhase.READY_TO_SAIL);
+        let island = this.getTile(col, row);
+        let beach = island.beachAtDirection(direction);
+        console.assert(!(beach.hasEmptyBeachSlots()));
+
+        // Ships leave beach and start sailing
+        this.sailingFleet = [];
+        for (let i = 0; i < beach.ships.length; i++) {
+            this.sailingFleet[i] = beach.ships[i];
+            this.sailingFleet[i] = null;
+        }
+        this.broadcastChange({
+            type: ChangeType.BEACH_EMPTIED,
+            col: col,
+            row: row,
+            beachNo: beach.beachNo
+        });
+
+        // Fleet enters the neighbouring hex
+        let fleetHex = hexNeighbor(col, row, direction);
+        let fleetTile = this.getTile(fleetHex.col, fleetHex.row);
+        if (fleetTile === null) {
+            this.placeRandomTile(fleetHex.col, fleetHex.row, direction);
+            fleetTile = this.getTile(fleetHex.col, fleetHex.row);
+            console.assert(fleetTile != null);
+            this.broadcastChange({
+                type: ChangeType.TILE_ADDED,
+                tile: fleetTile
+            });
+        }
+
+        // Prepare to land
+        this.turnPhase = TurnPhase.LANDING;
+        this.broadcastChange(this.getValidMoves());
+    }
+
     getTile(col, row) {
         // Linear search - perhaps a map would be better, but there's only 32.
         for (let tile of this.tiles) {
@@ -181,6 +241,7 @@ class Model {
         case TurnPhase.START_TURN: obj = this.getValidMovesStartTurn(); break;
         case TurnPhase.EXPANDING: obj = this.getValidMovesExpanding(); break;
         case TurnPhase.READY_TO_SAIL: obj = this.getValidMovesReadyToSail(); break;
+        case TurnPhase.LANDING: obj = this.getValidMovesLanding(); break;
         default: console.assert(false, "turn phase '" + obj.type + "' cannot be handled");
         }
 
@@ -289,6 +350,17 @@ class Model {
         return {beachExits: beachExits};
     }
 
+    /**
+     * Object describing valid moves while landing at an island.
+     *
+     * This will give the slots the player can add another ship to.  Note that
+     * the island has already been chosen.
+     */
+    getValidMovesLanding() {
+        // TODO: find the valid slots
+        return {beachSlots: []};
+    }
+
     // Sending updates to the view
     // TODO: replace this with socket.io when model is server-side
     listener;
@@ -305,9 +377,9 @@ class Tile {
     col;
     rotation;
 
-    place(row, col, rotation) {
-        this.row = row;
+    place(col, row, rotation) {
         this.col = col;
+        this.row = row;
         this.rotation = rotation;
     }
 
@@ -332,7 +404,15 @@ class IslandTile extends Tile {
         super();
         this.name = name;
         this.value = value;
+
+        // TODO: add beaches based on orientation
         this.beaches = beaches;
+
+        let i = 0;
+        for (let beach of this.beaches) {
+            beach.beachNo = i;
+            i++;
+        }
     }
 
     addShip(beachNo, slotNo, playerNo) {
@@ -356,6 +436,15 @@ class IslandTile extends Tile {
             }
         }
         return false;
+    }
+
+    beachAtDirection(direction) {
+        for (let beach of this.beaches) {
+            if (beach.exits.includes(direction)) {
+                return beach;
+            }
+        }
+        return null;
     }
 }
 
