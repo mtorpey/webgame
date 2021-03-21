@@ -20,6 +20,7 @@ class View {
 
     slotButtons;
     islandNameButtons = new Map();
+    beachSailButtons = new Map();
 
     /**
      * What to do when the model changes.
@@ -29,9 +30,10 @@ class View {
     modelChanged(obj) {
         console.log(obj);
         switch(obj.type) {
-        case ChangeType.SHIP_ADDED: this.addShip(obj.col, obj.row, obj.direction, obj.slotNo, obj.playerNo); break;
+        case ChangeType.SHIP_ADDED: this.addShip(obj.col, obj.row, obj.beachNo, obj.slotNo, obj.playerNo); break;
         case ChangeType.NEXT_PLAYER: break;  // TODO: track this properly
         case ChangeType.VALID_MOVES: this.presentValidMoves(obj); break;
+        case ChangeType.ISLAND_SELECTED: break;  // For now, do nothing.  Highlight maybe?
         default: console.assert(false, "change type '" + obj.type + "' cannot be handled");
         }
     }
@@ -48,20 +50,28 @@ class View {
         return this.canvas.getContext('2d');
     }
 
-    saveSlotButton(col, row, direction, slotNo, button) {
+    saveSlotButton(col, row, beachNo, slotNo, button) {
         if (!this.slotButtons)
             this.slotButtons = [];
         if (!this.slotButtons[col])
             this.slotButtons[col] = [];
         if (!this.slotButtons[col][row])
             this.slotButtons[col][row] = [];
-        if (!this.slotButtons[col][row][direction])
-            this.slotButtons[col][row][direction] = [];
-        this.slotButtons[col][row][direction][slotNo] = button;
+        if (!this.slotButtons[col][row][beachNo])
+            this.slotButtons[col][row][beachNo] = [];
+        this.slotButtons[col][row][beachNo][slotNo] = button;
     }
 
-    getSlotButton(col, row, direction, slotNo) {
-        return this.slotButtons[col][row][direction][slotNo];
+    getSlotButton(col, row, beachNo, slotNo) {
+        if (this.slotButtons
+            && this.slotButtons[col]
+            && this.slotButtons[col][row]
+            && this.slotButtons[col][row][beachNo]
+            && this.slotButtons[col][row][beachNo][slotNo]) {
+            return this.slotButtons[col][row][beachNo][slotNo];
+        } else {
+            return null;
+        }
     }
 
     /**
@@ -92,8 +102,23 @@ class View {
     }
 
     getIslandNameButton(col, row) {
-        console.log(this.islandNameButtons);
         return this.islandNameButtons.get(col + "," + row);
+    }
+
+    applyIslandNameButtons(f) {
+        this.islandNameButtons.forEach(f);
+    }
+
+    saveBeachSailButton(col, row, beachNo, button) {
+        this.beachSailButtons.set(col + "," + row + "," + beachNo, button);
+    }
+
+    getBeachSailButton(col, row, beachNo) {
+        return this.beachSailButtons.get(col + "," + row + "," + beachNo);
+    }
+
+    applyBeachSailButtons(f) {
+        this.beachSailButtons.forEach(f);
     }
 
     hexCenter(col, row) {
@@ -197,7 +222,7 @@ class View {
 
         button.col = col;
         button.row = row;
-        button.addEventListener("click", (e) => console.log(e.target));
+        button.addEventListener("click", (e) => controller.islandNameButtonClicked(e.target));
         this.saveIslandNameButton(col, row, button);
         this.canvasContainer.appendChild(button);
     }
@@ -283,34 +308,58 @@ class View {
         let btnGroup = document.createElement("div");
         btnGroup.classList.add("btnGroup");
 
+        let beachNo = 0;
+        while (this.getSlotButton(col, row, beachNo, 0)) {
+            beachNo++;
+        }
+
         for (let i = 0; i < capacity; i++) {
             let button = document.createElement("button");
             button.classList = "slotButton";
             button.style.width = buttonWidth + "px";
             button.style.height = buttonHeight + "px";
-            //button.disabled = false;
-            //button.style.backgroundColor = COLOR_BEACH;
             button.innerHTML = ships[i];
 
             button.col = col;
             button.row = row;
-            button.direction = direction;
+            button.beachNo = beachNo;
             button.slotNo = i;
-            button.addEventListener("click", () => controller.beachButtonClicked(button));
-            this.saveSlotButton(col, row, direction, i, button);
+            button.addEventListener("click", () => controller.slotButtonClicked(button));
+
+            this.saveSlotButton(col, row, beachNo, i, button);
             btnGroup.appendChild(button);
         }
 
+        // Set up slot buttons
         btnGroup.style.width = buttonWidth + "px";
         btnGroup.style.height = buttonHeight * capacity + "px";
         btnGroup.style.left = x - buttonWidth/2 + "px";
         btnGroup.style.top = y - buttonHeight/2 * capacity + "px";
         btnGroup.style.transform = "rotate(" + (angle+Math.PI/2) + "rad)"
         this.canvasContainer.appendChild(btnGroup);
+
+        // Create sail button
+        x = hexCenter.x + Math.sin(angle) * HEX_SIDE * r32*0.9;
+        y = hexCenter.y - Math.cos(angle) * HEX_SIDE * r32*0.9;
+        let sailButton = document.createElement("button");
+        sailButton.classList = "sailButton"
+        sailButton.style.width = buttonWidth + "px";
+        sailButton.style.height = buttonWidth + "px";
+        sailButton.style.left = x - buttonWidth/2 + "px";
+        sailButton.style.top = y - buttonWidth/2 + "px";
+        sailButton.style.transform = "rotate(" + (angle) + "rad)"
+        sailButton.innerHTML = "^";
+        sailButton.disabled = true;
+        sailButton.col = col;
+        sailButton.row = row;
+        sailButton.beachNo = beachNo;
+        sailButton.addEventListener("click", () => controller.sailButtonClicked(sailButton));
+        this.saveBeachSailButton(col, row, beachNo, sailButton);
+        this.canvasContainer.appendChild(sailButton);
     }
 
-    addShip(col, row, direction, slotNo, playerNo) {
-        let button = this.getSlotButton(col, row, direction, slotNo);
+    addShip(col, row, beachNo, slotNo, playerNo) {
+        let button = this.getSlotButton(col, row, beachNo, slotNo);
         button.style.backgroundColor = COLOR_PLAYER[playerNo];
         button.disabled = true;
         button.classList = ["ship"];
@@ -322,11 +371,13 @@ class View {
     presentValidMoves(obj) {
         // Disable all beach slot buttons
         this.applySlotButtons((b) => {b.disabled = true;});
+        this.applyIslandNameButtons((b) => {b.disabled = true;});
+        this.applyBeachSailButtons((b) => {b.disabled = true;});
 
         // Enable the beach slot buttons described in the object
         if (obj.beachSlots) {
             for (let slot of obj.beachSlots) {
-                let button = this.getSlotButton(slot.col, slot.row, slot.direction, slot.slotNo);
+                let button = this.getSlotButton(slot.col, slot.row, slot.beachNo, slot.slotNo);
                 button.disabled = false;
             }
         }
@@ -335,7 +386,14 @@ class View {
         if (obj.expandableIslands) {
             for (let island of obj.expandableIslands) {
                 let button = this.getIslandNameButton(island.col, island.row);
-                console.log(button);
+                button.disabled = false;
+            }
+        }
+
+        // Beaches that are ready to sail
+        if (obj.fullBeaches) {
+            for (let beach of obj.fullBeaches) {
+                let button = this.getBeachSailButton(beach.col, beach.row, beach.beachNo);
                 button.disabled = false;
             }
         }

@@ -33,7 +33,8 @@ button.slotButton:hover:enabled {
 }
 
 button.ship {
-    border-radius: 50%
+    border-radius: 50%;
+    border: 1px solid black;
 }
 
 button.islandName {
@@ -49,4 +50,15 @@ button.islandName:disabled {
     background-color: darkgreen;
     color: white;
     border: none;
+}
+
+button.sailButton {
+    position: absolute;
+    font: 20px Arial;
+    border-radius: 50%;
+}
+
+button.sailButton:disabled {
+    opacity: 0.0;
+    z-index: -1;
 }

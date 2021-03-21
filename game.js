@@ -1,7 +1,7 @@
 var controller;
 
 window.onload = function() {
-    controller = new Controller(new Model(["Alice", "Bob", "Charlie", "Demelza"]), new View());
+    controller = new Controller(new Model(["Alice", "Bob", "Charlie"]), new View());
     controller.draw();
 }
 
