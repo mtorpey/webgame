@@ -31,6 +31,7 @@ class Model {
     beachesAvailableForExpansion;
 
     sailingFleet;
+    landingTile;
 
     constructor(names) {
         // Setup players
@@ -195,7 +196,7 @@ class Model {
         this.sailingFleet = [];
         for (let i = 0; i < beach.ships.length; i++) {
             this.sailingFleet[i] = beach.ships[i];
-            this.sailingFleet[i] = null;
+            beach.ships[i] = null;
         }
         this.broadcastChange({
             type: ChangeType.BEACH_EMPTIED,
@@ -211,6 +212,7 @@ class Model {
             this.placeRandomTile(fleetHex.col, fleetHex.row, direction);
             fleetTile = this.getTile(fleetHex.col, fleetHex.row);
             console.assert(fleetTile != null);
+            this.landingTile = fleetTile;
             this.broadcastChange({
                 type: ChangeType.TILE_ADDED,
                 tile: fleetTile
@@ -219,6 +221,7 @@ class Model {
 
         // Prepare to land
         this.turnPhase = TurnPhase.LANDING;
+        this.validLandingBeaches = this.landingTile.beaches.filter(b => b.hasEmptyBeachSlots());
         this.broadcastChange(this.getValidMoves());
     }
 
@@ -353,12 +356,32 @@ class Model {
     /**
      * Object describing valid moves while landing at an island.
      *
-     * This will give the slots the player can add another ship to.  Note that
-     * the island has already been chosen.
+     * This will give the slots the player can add another ship to, as well as
+     * the ships that are yet to land.  Note that the island has already been
+     * chosen.
      */
     getValidMovesLanding() {
-        // TODO: find the valid slots
-        return {beachSlots: []};
+        console.log("landing tile", this.landingTile);
+        console.log("landing beaches", this.validLandingBeaches);
+        let beachSlots = [];
+        for (let beach of this.validLandingBeaches) {
+            for (let slotNo = 0; slotNo < beach.capacity; slotNo++) {
+                if (beach.ships[slotNo] === null) {
+                    beachSlots.push({
+                        col: this.landingTile.col,
+                        row: this.landingTile.row,
+                        beachNo: beach.beachNo,
+                        slotNo: slotNo
+                    });
+                }
+            }
+        }
+        return {
+            beachSlots: beachSlots,
+            landingShips: this.sailingFleet,
+            landingCol: this.landingTile.col,
+            landingRow: this.landingTile.row
+        };
     }
 
     // Sending updates to the view

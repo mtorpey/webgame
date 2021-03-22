@@ -7,11 +7,15 @@
     border: 1pt solid;
 }
 
-#gameCanvasContainer>div.btnGroup {
+#gameCanvasContainer>div.beachGroup {
     font-size: 0;
     position: absolute;
 }
 
+div.landingGroup {
+    font-size: 0;
+    position: absolute;
+}
 /*#gameCanvasContainer>div.btnGroup>button*/
 button.slotButton {
     /*font-size: 8px;  /* should set this dynamically if used */

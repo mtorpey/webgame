@@ -310,7 +310,7 @@ class View {
         let buttonWidth = HEX_SIDE / 3;
 
         let btnGroup = document.createElement("div");
-        btnGroup.classList.add("btnGroup");
+        btnGroup.classList.add("beachGroup");
 
         // Create slot buttons
         for (let i = 0; i < capacity; i++) {
@@ -337,6 +337,39 @@ class View {
         btnGroup.style.top = y - buttonHeight/2 * capacity + "px";
         btnGroup.style.transform = "rotate(" + (angle+Math.PI/2) + "rad)"
         this.canvasContainer.appendChild(btnGroup);
+    }
+
+    createLandingSlotGroup(col, row, ships) {
+        let hexCenter = this.hexCenter(col, row);
+        let buttonHeight = HEX_SIDE / 6;  // TODO: make this const
+        let buttonWidth = HEX_SIDE / 3;
+
+        let landingGroup = document.createElement("div");
+        landingGroup.classList = "landingGroup";
+
+        // Create ship buttons
+        for (let i = 0; i < ships.length; i++) {
+            let button = document.createElement("button");
+            button.classList = "ship landing";
+            button.style.width = buttonWidth + "px";
+            button.style.height = buttonHeight + "px";
+            //button.style.transform = "rotate(" + (Math.random() * Math.PI * 2) + "rad)"
+            button.style.backgroundColor = COLOR_PLAYER[ships[i]];
+            button.draggable = true;
+
+            button.slotNo = i;
+            button.owner = ships[i];
+            button.addEventListener("click", () => controller.landingShipButtonClicked(button));
+
+            landingGroup.appendChild(button);
+        }
+
+        landingGroup.style.width = buttonWidth + "px";
+        landingGroup.style.height = buttonHeight * ships.length + "px";
+        landingGroup.style.left = hexCenter.x - buttonWidth/2 + "px";
+        landingGroup.style.top = hexCenter.y - buttonHeight/2 * ships.length + "px";
+        //landingGroup.style.transform = "rotate(" + (Math.random() * Math.PI * 2) + "rad)"
+        this.canvasContainer.appendChild(landingGroup);
     }
 
     createSailButton(col, row, beachNo, exitDirection) {
@@ -421,6 +454,11 @@ class View {
                 );
                 button.disabled = false;
             }
+        }
+
+        // Ships landing at island
+        if (obj.landingShips) {
+            this.createLandingSlotGroup(obj.landingCol, obj.landingRow, obj.landingShips);
         }
     }
 

@@ -35,6 +35,11 @@ class Controller {
         button.blur();
     }
 
+    landingShipButtonClicked(button) {
+        console.log("Ship " + button.slotNo + " of color " + button.owner + " trying to land");
+        button.blur();
+    }
+
     initialPlacement(beachNo, slotNo) {
         // TODO: pass in player number for verification?
         this.model.initialPlacement(beachNo, slotNo);
