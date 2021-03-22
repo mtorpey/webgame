@@ -360,6 +360,7 @@ class View {
             button.slotNo = i;
             button.owner = ships[i];
             button.addEventListener("click", () => controller.landingShipButtonClicked(button));
+            button.addEventListener("dragstart", (e) => {event.dataTransfer.setData("slotNo", button.slotNo); console.log("dragging")});
 
             landingGroup.appendChild(button);
         }
@@ -432,6 +433,11 @@ class View {
             for (let slot of obj.beachSlots) {
                 let button = this.getSlotButton(slot.col, slot.row, slot.beachNo, slot.slotNo);
                 button.disabled = false;
+                // Handle drops
+                button.addEventListener("dragover", e => e.preventDefault());
+                button.addEventListener("dragenter", e => button.classList.add("dragHover"));
+                button.addEventListener("dragleave", e => button.classList.remove("dragHover"));
+                button.addEventListener("drop", e => {e.preventDefault(); controller.landingShipDraggedToSlot(e.dataTransfer.getData("slotNo"), e.target);});
             }
         }
 

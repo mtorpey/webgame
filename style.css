@@ -36,9 +36,17 @@ button.slotButton:hover:enabled {
     background-color: tan;
 }
 
+button.dragHover {
+    background-color: tan !important;
+}
+
 button.ship {
     border-radius: 50%;
     border: 1px solid black;
+}
+
+button.landing {
+
 }
 
 button.islandName {

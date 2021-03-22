@@ -225,6 +225,10 @@ class Model {
         this.broadcastChange(this.getValidMoves());
     }
 
+    landShip(landingShipNo, beachNo, slotNo) {
+        console.log("ship " + landingShipNo + " landing at " + beachNo + slotNo);
+    }
+
     getTile(col, row) {
         // Linear search - perhaps a map would be better, but there's only 32.
         for (let tile of this.tiles) {

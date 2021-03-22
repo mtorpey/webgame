@@ -40,6 +40,10 @@ class Controller {
         button.blur();
     }
 
+    landingShipDraggedToSlot(landingGroupSlotNo, slotButton) {
+        this.model.landShip(landingGroupSlotNo, slotButton.beachNo, slotButton.slotNo);
+    }
+
     initialPlacement(beachNo, slotNo) {
         // TODO: pass in player number for verification?
         this.model.initialPlacement(beachNo, slotNo);
