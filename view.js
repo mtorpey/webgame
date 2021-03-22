@@ -171,11 +171,16 @@ class View {
         context.fillStyle = COLOR_BACKGROUND;
         context.fillRect(0, 0, canvas.width, canvas.height);
 
-        let nrCols = canvas.width / (HEX_SIDE * 3 / 2) + 1;
-        let nrRows = canvas.height / (HEX_SIDE * Math.sqrt(3)) + 1;
         for (let tile of model.tiles) {
             this.drawIsland(tile);
         }
+
+        this.drawGrid();
+    }
+
+    drawGrid() {
+        let nrCols = this.canvas.width / (HEX_SIDE * 3 / 2) + 1;
+        let nrRows = this.canvas.height / (HEX_SIDE * Math.sqrt(3)) + 1;
         for (let col = 0; col < nrCols; col++) {
             for (let row = 0; row < nrRows; row++) {
                 this.drawHex(col, row, HEX_SIDE, COLOR_GRID, COLOR_EMPTYSPACE);
@@ -191,6 +196,9 @@ class View {
             let beach = island.beaches[beachNo];
             this.drawBeach(island.col, island.row, beachNo, beach);
         }
+
+        // Cover up those edges
+        this.drawGrid();
     }
 
     // TODO: remove now we have button?

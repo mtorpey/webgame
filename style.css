@@ -47,7 +47,7 @@ button.islandName:enabled {
 }
 
 button.islandName:disabled {
-    background-color: darkgreen;
+    background-color: transparent;
     color: white;
     border: none;
 }
