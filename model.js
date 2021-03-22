@@ -226,7 +226,25 @@ class Model {
     }
 
     landShip(landingShipNo, beachNo, slotNo) {
-        console.log("ship " + landingShipNo + " landing at " + beachNo + slotNo);
+        let owner = this.sailingFleet[landingShipNo];
+        this.sailingFleet.splice(landingShipNo, 1);
+
+        console.log(beachNo, slotNo, owner);
+        this.landingTile.addShip(beachNo, slotNo, owner);
+        this.broadcastChange({
+            type: ChangeType.SHIP_ADDED,
+            col: this.landingTile.col,
+            row: this.landingTile.row,
+            beachNo: beachNo,
+            slotNo: slotNo,
+            playerNo: owner
+        });
+
+        if (this.sailingFleet.length == 0) {
+            this.prepareToSailIfAppropriate();
+        }
+        
+        this.broadcastChange(this.getValidMoves());
     }
 
     getTile(col, row) {
@@ -365,8 +383,6 @@ class Model {
      * chosen.
      */
     getValidMovesLanding() {
-        console.log("landing tile", this.landingTile);
-        console.log("landing beaches", this.validLandingBeaches);
         let beachSlots = [];
         for (let beach of this.validLandingBeaches) {
             for (let slotNo = 0; slotNo < beach.capacity; slotNo++) {

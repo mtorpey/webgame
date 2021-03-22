@@ -293,6 +293,7 @@ class View {
 
         // Create the sail buttons
         for (let exitDirection of beach.exits) {
+            console.log("creating sail button", col, row, beachNo, exitDirection);
             this.createSailButton(col, row, beachNo, exitDirection)
         }
     }
@@ -340,12 +341,17 @@ class View {
     }
 
     createLandingSlotGroup(col, row, ships) {
+        let landingGroup = document.getElementById("landingGroup");
+        if (landingGroup) {
+            landingGroup.remove();
+        }
+        
         let hexCenter = this.hexCenter(col, row);
         let buttonHeight = HEX_SIDE / 6;  // TODO: make this const
         let buttonWidth = HEX_SIDE / 3;
 
-        let landingGroup = document.createElement("div");
-        landingGroup.classList = "landingGroup";
+        landingGroup = document.createElement("div");
+        landingGroup.id = "landingGroup";
 
         // Create ship buttons
         for (let i = 0; i < ships.length; i++) {
@@ -360,7 +366,7 @@ class View {
             button.slotNo = i;
             button.owner = ships[i];
             button.addEventListener("click", () => controller.landingShipButtonClicked(button));
-            button.addEventListener("dragstart", (e) => {event.dataTransfer.setData("slotNo", button.slotNo); console.log("dragging")});
+            button.addEventListener("dragstart", (e) => {e.dataTransfer.setData("slotNo", button.slotNo);});
 
             landingGroup.appendChild(button);
         }
@@ -399,7 +405,7 @@ class View {
         sailButton.beachNo = beachNo;
         sailButton.exitDirection = exitDirection;
         sailButton.addEventListener("click", () => controller.sailButtonClicked(sailButton));
-        this.saveSailButton(col, row, beachNo, sailButton);
+        this.saveSailButton(col, row, exitDirection, sailButton);
         this.canvasContainer.appendChild(sailButton);
     }
 
@@ -424,10 +430,16 @@ class View {
      */
     presentValidMoves(obj) {
         // Disable all beach slot buttons
-        this.applySlotButtons((b) => {b.disabled = true;});
+        this.applySlotButtons((b) => {
+            b.disabled = true;
+            b.ondragover = null;
+            b.ondragenter = null;
+            b.ondragleave = null;
+            b.ondrop = null;
+        });
         this.applyIslandNameButtons((b) => {b.disabled = true;});
         this.applySailButtons((b) => {b.disabled = true;});
-
+ 
         // Enable the beach slot buttons described in the object
         if (obj.beachSlots) {
             for (let slot of obj.beachSlots) {
@@ -437,7 +449,7 @@ class View {
                 button.addEventListener("dragover", e => e.preventDefault());
                 button.addEventListener("dragenter", e => button.classList.add("dragHover"));
                 button.addEventListener("dragleave", e => button.classList.remove("dragHover"));
-                button.addEventListener("drop", e => {e.preventDefault(); controller.landingShipDraggedToSlot(e.dataTransfer.getData("slotNo"), e.target);});
+                button.ondrop = (e => {e.preventDefault(); controller.landingShipDraggedToSlot(e.dataTransfer.getData("slotNo"), e.target);});
             }
         }
 
@@ -458,6 +470,7 @@ class View {
                     //exit.beachNo,  // this shouldn't be necessary
                     exit.exitDirection
                 );
+                console.log("exit at", exit.col, exit.row, exit.exitDirection);
                 button.disabled = false;
             }
         }

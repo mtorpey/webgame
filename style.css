@@ -12,7 +12,7 @@
     position: absolute;
 }
 
-div.landingGroup {
+#landingGroup {
     font-size: 0;
     position: absolute;
 }
@@ -43,10 +43,6 @@ button.dragHover {
 button.ship {
     border-radius: 50%;
     border: 1px solid black;
-}
-
-button.landing {
-
 }
 
 button.islandName {
