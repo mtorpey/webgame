@@ -201,18 +201,6 @@ class View {
         this.drawGrid();
     }
 
-    // TODO: remove now we have button?
-    writeIslandLabel(name, value, col, row) {
-        let center = this.hexCenter(col, row);
-        this.context.font = HEX_SIDE/4 + "px Arial";
-        this.context.fillStyle = 'white';
-        this.context.textAlign = 'center';
-        this.context.fillText(name, center.x, center.y);
-        if (value > 0) {
-            this.context.fillText(value, center.x, center.y + 20);
-        }
-    }
-
     createIslandNameButton(name, value, col, row) {
         let center = this.hexCenter(col, row);
 
