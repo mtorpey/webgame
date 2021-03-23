@@ -44,24 +44,33 @@ class Model {
         // Setup tiles
         //let tonga = new IslandTile("Tonga", 0, [new Beach([0], 2), new Beach([1, 2], 3), new Beach([3, 4, 5], 5)]);
         this.tiles = [];
-        this.tonga = new IslandTile(
-            "Tonga",
-            0,
-            [
-                new Beach([0], 3),
-                new Beach([1], 3),
-                new Beach([2], 3),
-                new Beach([3], 3),
-                new Beach([4], 3),
-                new Beach([5], 3)
-            ]
-        );
+        this.tonga = new IslandTile("Tonga", 0, [
+            new Beach([0], 3),
+            new Beach([1], 3),
+            new Beach([2], 3),
+            new Beach([3], 3),
+            new Beach([4], 3),
+            new Beach([5], 3)
+        ]);
         this.placeTile(3, 2, 0, this.tonga);
 
         // Tiles in the supply
         this.tileSupply = [
-            new IslandTile("Britain", 5, [new Beach([0, 1], 5), new Beach([3], 2)]),
-            new IslandTile("Ireland", 3, [new Beach([3, 4, 5], 4), new Beach([1, 2], 2)])
+            new IslandTile("Fidschi", 5, [new Beach([5, 0], 4), new Beach([1, 2], 4), new Beach([4], 5)]),
+            new IslandTile("Hawaii", 5, [new Beach([0], 5), new Beach([1, 2], 2), new Beach([4, 5], 3)]),
+            new IslandTile("Hiva Oa", 4, [new Beach([0], 2), new Beach([1, 2], 5), new Beach([4, 5], 2)]),
+            new IslandTile("Mangareva", 4, [new Beach([0, 1], 3), new Beach([2], 4), new Beach([4, 5], 2)]),
+            new IslandTile("Muroroa", 2, [new Beach([1, 2], 3), new Beach([4], 2), new Beach([5], 2)]),
+            new IslandTile("Nauru", 2, [new Beach([0], 3), new Beach([1, 2], 2), new Beach([4, 5], 2)]),
+            new IslandTile("Oahu", 4, [new Beach([0], 5), new Beach([1, 2], 3), new Beach([4, 5], 3)]),
+            new IslandTile("Rapa Nui", 3, [new Beach([0, 1, 2], 3), new Beach([4, 5], 5)]),
+            new IslandTile("Rarotonga", 3, [new Beach([0, 1, 2], 4), new Beach([4, 5], 3)]),
+            new IslandTile("Samoa", 5, [new Beach([0, 1], 4), new Beach([2], 5), new Beach([4, 5], 3)]),
+            new IslandTile("Tahiti", 4, [new Beach([0, 1], 3), new Beach([2], 4), new Beach([4, 5], 2)]),
+            new IslandTile("Tokelau", 3, [new Beach([5, 0], 3), new Beach([1, 2], 2), new Beach([4], 4)]),
+            new IslandTile("Tuamotu", 3, [new Beach([4, 5, 0], 4), new Beach([1, 2], 4)]),
+            new IslandTile("Tubuai", 2, [new Beach([1, 2], 3), new Beach([4, 5], 3)]),
+            new IslandTile("Tuvalu", 4, [new Beach([0], 4), new Beach([1, 2], 3), new Beach([4, 5], 2)])
         ];
         this.tileSupply = this.tileSupply.sort(() => Math.random() - 0.5);
     }
@@ -96,7 +105,7 @@ class Model {
 
         // Is initial placement done?
         if (this.tonga.nrShipsOnTile(this.currentPlayer) === 2) {
-            this.turnPhase = TurnPhase.START_TURN;
+            this.turnPhase = TurnPhase.START_OF_TURN;
         }
 
         // Broadcast valid moves
@@ -114,7 +123,7 @@ class Model {
     }
     
     chooseExpansionIsland(col, row) {
-        console.assert(this.turnPhase === TurnPhase.START_TURN);
+        console.assert(this.turnPhase === TurnPhase.START_OF_TURN);
 
         // Get the island
         let island = this.getTile(col, row);
@@ -262,11 +271,11 @@ class Model {
         // Get the appropriate types of moves
         switch(this.turnPhase) {
         case TurnPhase.INITIAL_PLACEMENT: obj = this.getValidMovesInitialPlacement(); break;
-        case TurnPhase.START_TURN: obj = this.getValidMovesStartTurn(); break;
+        case TurnPhase.START_OF_TURN: obj = this.getValidMovesStartTurn(); break;
         case TurnPhase.EXPANDING: obj = this.getValidMovesExpanding(); break;
         case TurnPhase.READY_TO_SAIL: obj = this.getValidMovesReadyToSail(); break;
         case TurnPhase.LANDING: obj = this.getValidMovesLanding(); break;
-        default: console.assert(false, "turn phase '" + obj.type + "' cannot be handled");
+        default: console.assert(false, "turn phase '" + this.turnPhase + "' cannot be handled");
         }
 
         // Mark this as a "valid moves" object for sending to the view

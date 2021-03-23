@@ -215,7 +215,7 @@ class View {
         button.style.width = buttonWidth + "px";
         button.style.height = buttonHeight + "px";
         button.disabled = true;
-        button.innerHTML = name + (value > 0 ? "\n" + value : "");
+        button.innerHTML = name + (value > 0 ? "<br>" + value : "");
         button.style.top = y + "px";
         button.style.left = x + "px";
 

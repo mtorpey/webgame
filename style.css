@@ -47,7 +47,7 @@ button.ship {
 
 button.islandName {
     position: absolute;
-    font: 20px Arial;
+    font: 100% Arial;
 }
 
 button.islandName:enabled {
