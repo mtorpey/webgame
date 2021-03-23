@@ -1,5 +1,3 @@
-const HEX_SIDE = 100;
-
 const COLOR_EMPTYSPACE = null;
 const COLOR_BACKGROUND = 'royalblue';
 const COLOR_GRID = 'dodgerblue';
@@ -14,11 +12,14 @@ const COLOR_PLAYER = [
     'blue'
 ];
 
-const GRID_LINE_WIDTH = 10;
-
 class View {
 
+    hexSide = 125;
+    left = 30;
+    top = 0;//-360;
+
     slotButtons;
+    slotGroups = new Map();
     islandNameButtons = new Map();
     sailButtons = new Map();
 
@@ -34,11 +35,15 @@ class View {
         case ChangeType.SHIP_ADDED: this.addShip(obj.col, obj.row, obj.beachNo, obj.slotNo, obj.playerNo); break;
         case ChangeType.BEACH_EMPTIED: this.emptyBeach(obj.col, obj.row, obj.beachNo); break;
         case ChangeType.ISLAND_SELECTED: break;  // For now, do nothing.  Highlight maybe?
-        case ChangeType.TILE_ADDED: this.drawIsland(obj.tile); break;
+        case ChangeType.TILE_ADDED: this.rescaleToInclude(obj.tile.col, obj.tile.row); this.drawIsland(obj.tile); break;
         case ChangeType.NEXT_PLAYER: break;  // TODO: track this properly
         case ChangeType.VALID_MOVES: this.presentValidMoves(obj); break;
         default: console.assert(false, "change type '" + obj.type + "' cannot be handled");
         }
+    }
+
+    get gridLineWidth() {
+        return this.hexSide / 10;
     }
 
     get canvas() {
@@ -51,6 +56,18 @@ class View {
 
     get context() {
         return this.canvas.getContext('2d');
+    }
+
+    rescaleToInclude(col, row) {
+        // Does the canvas currently show this tile?
+        let canvas = this.canvas;
+        while (this.hexPoint(col, row, 5).x < 0
+               || this.hexPoint(col, row, 2).x > canvas.width
+               || this.hexPoint(col, row, 0).y < 0
+               || this.hexPoint(col, row, 3).y > canvas.height) {
+            this.hexSide *= 0.95;
+        }
+        controller.draw();
     }
 
     saveSlotButton(col, row, beachNo, slotNo, button) {
@@ -102,6 +119,14 @@ class View {
         }
     }
 
+    saveSlotGroup(col, row, beachNo, group) {
+        this.slotGroups.set(col + "," + row + "," + beachNo, group);
+    }
+
+    getSlotGroup(col, row, beachNo) {
+        return this.slotGroups.get(col + "," + row + "," + beachNo);
+    }
+
     saveIslandNameButton(col, row, button) {
         this.islandNameButtons.set(col + "," + row, button);
     }
@@ -127,20 +152,25 @@ class View {
     }
 
     deleteAllButtons() {
-        this.applySlotButtons(b => b.remove());
+        this.applySlotButtons(b => b.parentNode.removeChild(b));
         this.slotButtons = null;
+        for (let group of document.getElementsByClassName("beachGroup")) {
+            group.remove();
+        }
+        console.log("nothing: ", document.getElementsByClassName("slotButton"));
         this.applyIslandNameButtons(b => b.remove());
         this.islandNameButtons = new Map();
         this.applySailButtons(b => b.remove());
         this.sailButtons = new Map();
         this.deleteLandingSlotGroup();
+        console.log("deleted all buttons");
     }
 
     hexCenter(col, row) {
-        let x = 3 / 2 * HEX_SIDE * col;
-        let y = Math.sqrt(3) * HEX_SIDE * row;
+        let x = (3 / 2) * this.hexSide * col - this.left;
+        let y = Math.sqrt(3) * this.hexSide * row - this.top;
         if (col % 2 == 1) {
-            y += Math.sqrt(3)/2 * HEX_SIDE;
+            y += Math.sqrt(3)/2 * this.hexSide;
         }
         return {'x': x, 'y': y}
     }
@@ -158,8 +188,8 @@ class View {
         ];
         let center = this.hexCenter(col, row);
         return {
-            x: center.x + points[pointNo].x * HEX_SIDE,
-            y: center.y + points[pointNo].y * HEX_SIDE
+            x: center.x + points[pointNo].x * this.hexSide,
+            y: center.y + points[pointNo].y * this.hexSide
         };
     }
 
@@ -180,8 +210,6 @@ class View {
     drawMap(model) {
         console.log(model);
 
-        this.deleteAllButtons();
-
         let canvas = this.canvas;
         let context = this.context;
         context.fillStyle = COLOR_BACKGROUND;
@@ -197,17 +225,19 @@ class View {
     }
 
     drawGrid() {
-        let nrCols = this.canvas.width / (HEX_SIDE * 3 / 2) + 1;
-        let nrRows = this.canvas.height / (HEX_SIDE * Math.sqrt(3)) + 1;
-        for (let col = 0; col < nrCols; col++) {
-            for (let row = 0; row < nrRows; row++) {
-                this.drawHex(col, row, HEX_SIDE, COLOR_GRID, COLOR_EMPTYSPACE);
+        let nrCols = this.canvas.width / (this.hexSide * 3 / 2) + 1;
+        let nrRows = this.canvas.height / (this.hexSide * Math.sqrt(3)) + 1;
+        let firstCol = Math.floor(this.left / (this.hexSide * 3 / 2));
+        let firstRow = Math.floor(this.top / (this.hexSide * Math.sqrt(3)));
+        for (let col = firstCol; col < firstCol + nrCols; col++) {
+            for (let row = firstRow; row < firstRow + nrRows; row++) {
+                this.drawHex(col, row, this.hexSide, COLOR_GRID, COLOR_EMPTYSPACE);
             }
         }
     }
 
     drawIsland(island) {
-        this.drawHex(island.col, island.row, HEX_SIDE, COLOR_GRID, COLOR_ISLAND);
+        this.drawHex(island.col, island.row, this.hexSide, COLOR_GRID, COLOR_ISLAND);
         //this.writeIslandLabel(island.name, island.value, island.col, island.row);
         this.createIslandNameButton(island.name, island.value, island.col, island.row);
         for (let beachNo = 0; beachNo < island.beaches.length; beachNo++) {
@@ -222,13 +252,19 @@ class View {
     createIslandNameButton(name, value, col, row) {
         let center = this.hexCenter(col, row);
 
-        let buttonHeight = HEX_SIDE * 0.5;
-        let buttonWidth = HEX_SIDE * 0.75;
+        let buttonHeight = this.hexSide * 0.5;
+        let buttonWidth = this.hexSide * 0.75;
 
         let x = center.x - buttonWidth / 2;
         let y = center.y - buttonHeight / 2;
 
-        let button = document.createElement("button");
+        let button = this.getIslandNameButton(col, row);
+        if (!button) {
+            button = document.createElement("button");
+            this.saveIslandNameButton(col, row, button);
+            button.addEventListener("click", (e) => controller.islandNameButtonClicked(e.target));
+            this.canvasContainer.appendChild(button);
+        }
         button.classList = "islandName";
         button.style.width = buttonWidth + "px";
         button.style.height = buttonHeight + "px";
@@ -239,9 +275,6 @@ class View {
 
         button.col = col;
         button.row = row;
-        button.addEventListener("click", (e) => controller.islandNameButtonClicked(e.target));
-        this.saveIslandNameButton(col, row, button);
-        this.canvasContainer.appendChild(button);
     }
 
     drawBeach(col, row, beachNo, beach) {
@@ -257,7 +290,7 @@ class View {
             let edgeCenter = this.hexMidEdge(col, row, exit);
             context.arc(
                 edgeCenter.x, edgeCenter.y,
-                HEX_SIDE / 3,
+                this.hexSide / 3,
                 0 + exit * Math.PI / 3,
                 Math.PI + exit * Math.PI / 3
             );
@@ -272,7 +305,7 @@ class View {
             context.moveTo(cornerPoint.x, cornerPoint.y);
             context.arc(
                 cornerPoint.x, cornerPoint.y,
-                HEX_SIDE * 2 / 3,
+                this.hexSide * 2 / 3,
                 cornerNo * Math.PI / 3,
                 (cornerNo+2) * Math.PI / 3
             );
@@ -303,7 +336,7 @@ class View {
             context.lineTo(points[3].x, points[3].y);
             context.arcTo(control.x, control.y,
                           points[0].x, points[0].y,
-                          HEX_SIDE * 3 / 2);
+                          this.hexSide * 3 / 2);
             context.lineTo(points[1].x, points[1].y);
             this.createSlotButtons(col, row, beachNo, exits[1], beach.ships);
         }
@@ -322,17 +355,28 @@ class View {
         let hexCenter = this.hexCenter(col, row);
         let r32 = Math.sqrt(3)/2;
 
-        let x = hexCenter.x + Math.sin(angle) * HEX_SIDE * r32*0.75;
-        let y = hexCenter.y - Math.cos(angle) * HEX_SIDE * r32*0.75;
-        let buttonHeight = HEX_SIDE / 6;
-        let buttonWidth = HEX_SIDE / 3;
+        let x = hexCenter.x + Math.sin(angle) * this.hexSide * r32*0.75;
+        let y = hexCenter.y - Math.cos(angle) * this.hexSide * r32*0.75;
+        let buttonHeight = this.hexSide / 6;
+        let buttonWidth = this.hexSide / 3;
 
-        let btnGroup = document.createElement("div");
-        btnGroup.classList.add("beachGroup");
+        let btnGroup = this.getSlotGroup(col, row, beachNo);
+        if (!btnGroup) {
+            btnGroup = document.createElement("div");
+            this.saveSlotGroup(col, row, beachNo, btnGroup);
+            this.canvasContainer.appendChild(btnGroup);
+        }
+        btnGroup.classList = "beachGroup";
 
         // Create slot buttons
         for (let i = 0; i < capacity; i++) {
-            let button = document.createElement("button");
+            let button = this.getSlotButton(col, row, beachNo, i);
+            if (button === null) {
+                button = document.createElement("button");
+                button.addEventListener("click", () => controller.slotButtonClicked(button));
+                this.saveSlotButton(col, row, beachNo, i, button);
+                btnGroup.appendChild(button);
+            }
             button.classList = "slotButton";
             button.style.width = buttonWidth + "px";
             button.style.height = buttonHeight + "px";
@@ -346,10 +390,7 @@ class View {
             button.row = row;
             button.beachNo = beachNo;
             button.slotNo = i;
-            button.addEventListener("click", () => controller.slotButtonClicked(button));
 
-            this.saveSlotButton(col, row, beachNo, i, button);
-            btnGroup.appendChild(button);
         }
 
         // Set up slot button group
@@ -358,14 +399,13 @@ class View {
         btnGroup.style.left = x - buttonWidth/2 + "px";
         btnGroup.style.top = y - buttonHeight/2 * capacity + "px";
         btnGroup.style.transform = "rotate(" + (angle+Math.PI/2) + "rad)"
-        this.canvasContainer.appendChild(btnGroup);
     }
 
     createLandingSlotGroup(col, row, ships) {
         console.assert(!document.getElementById("landingGroup"));
         let hexCenter = this.hexCenter(col, row);
-        let buttonHeight = HEX_SIDE / 6;  // TODO: make this const
-        let buttonWidth = HEX_SIDE / 3;
+        let buttonHeight = this.hexSide / 6;  // TODO: make this const
+        let buttonWidth = this.hexSide / 3;
 
         let landingGroup = document.createElement("div");
         landingGroup.id = "landingGroup";
@@ -401,6 +441,7 @@ class View {
         if (landingGroup) {
             landingGroup.remove();
         }
+        console.assert(document.getElementById("landingGroup") === null);
     }
 
     createSailButton(col, row, beachNo, exitDirection) {
@@ -408,14 +449,21 @@ class View {
         let hexCenter = this.hexCenter(col, row);
         let r32 = Math.sqrt(3)/2;
 
-        let x = hexCenter.x + Math.sin(angle) * HEX_SIDE * r32*0.9;
-        let y = hexCenter.y - Math.cos(angle) * HEX_SIDE * r32*0.9;
-        let buttonWidth = HEX_SIDE / 3;
+        let x = hexCenter.x + Math.sin(angle) * this.hexSide * r32*0.9;
+        let y = hexCenter.y - Math.cos(angle) * this.hexSide * r32*0.9;
+        let buttonWidth = this.hexSide / 3;
 
         // Create sail button
-        x = hexCenter.x + Math.sin(angle) * HEX_SIDE * r32*0.9;
-        y = hexCenter.y - Math.cos(angle) * HEX_SIDE * r32*0.9;
-        let sailButton = document.createElement("button");
+        x = hexCenter.x + Math.sin(angle) * this.hexSide * r32*0.9;
+        y = hexCenter.y - Math.cos(angle) * this.hexSide * r32*0.9;
+
+        let sailButton = this.getSailButton(col, row, exitDirection);
+        if (!sailButton) {
+            sailButton = document.createElement("button");
+            sailButton.addEventListener("click", () => controller.sailButtonClicked(sailButton));
+            this.saveSailButton(col, row, exitDirection, sailButton);
+            this.canvasContainer.appendChild(sailButton);
+        }
         sailButton.classList = "sailButton"
         sailButton.style.width = buttonWidth + "px";
         sailButton.style.height = buttonWidth + "px";
@@ -428,9 +476,6 @@ class View {
         sailButton.row = row;
         sailButton.beachNo = beachNo;
         sailButton.exitDirection = exitDirection;
-        sailButton.addEventListener("click", () => controller.sailButtonClicked(sailButton));
-        this.saveSailButton(col, row, exitDirection, sailButton);
-        this.canvasContainer.appendChild(sailButton);
     }
 
     addShip(col, row, beachNo, slotNo, playerNo) {
@@ -497,7 +542,6 @@ class View {
                     //exit.beachNo,  // this shouldn't be necessary
                     exit.exitDirection
                 );
-                console.log("exit at", exit.col, exit.row, exit.exitDirection);
                 button.disabled = false;
             }
         }
@@ -512,7 +556,7 @@ class View {
         let context = this.context;
         context.strokeStyle = strokeColor;
         context.fillStyle = fillColor;
-        context.lineWidth = GRID_LINE_WIDTH;
+        context.lineWidth = this.gridLineWidth;
         context.beginPath();
         let points = [];
         for (let pointNo = 0; pointNo < 6; pointNo++) {

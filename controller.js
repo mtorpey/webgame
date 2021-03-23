@@ -13,6 +13,10 @@ class Controller {
         this.view.drawMap(this.model);
     }
 
+    deleteButtons() {
+        this.view.deleteAllButtons();
+    }
+
     slotButtonClicked(button) {
         switch(this.model.turnPhase) {
         case TurnPhase.INITIAL_PLACEMENT:
