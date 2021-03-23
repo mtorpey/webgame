@@ -22,13 +22,14 @@ class View {
     islandNameButtons = new Map();
     sailButtons = new Map();
 
+    validMoves = {};
+
     /**
      * What to do when the model changes.
      *
      * @param obj JSON object describing the changes
      */
     modelChanged(obj) {
-        console.log(obj);
         switch(obj.type) {
         case ChangeType.SHIP_ADDED: this.addShip(obj.col, obj.row, obj.beachNo, obj.slotNo, obj.playerNo); break;
         case ChangeType.BEACH_EMPTIED: this.emptyBeach(obj.col, obj.row, obj.beachNo); break;
@@ -82,14 +83,16 @@ class View {
      * This is a deep nested array with holes, so is a bit complicated.
      */
     applySlotButtons(f) {
-        for (let column of this.slotButtons) {
-            if (column) {
-                for (let island of column) {
-                    if (island) {
-                        for (let beach of island) {
-                            if (beach) {
-                                for (let slotButton of beach) {
-                                    f(slotButton);
+        if (this.slotButtons) {
+            for (let column of this.slotButtons) {
+                if (column) {
+                    for (let island of column) {
+                        if (island) {
+                            for (let beach of island) {
+                                if (beach) {
+                                    for (let slotButton of beach) {
+                                        f(slotButton);
+                                    }
                                 }
                             }
                         }
@@ -121,6 +124,16 @@ class View {
 
     applySailButtons(f) {
         this.sailButtons.forEach(f);
+    }
+
+    deleteAllButtons() {
+        this.applySlotButtons(b => b.remove());
+        this.slotButtons = null;
+        this.applyIslandNameButtons(b => b.remove());
+        this.islandNameButtons = new Map();
+        this.applySailButtons(b => b.remove());
+        this.sailButtons = new Map();
+        this.deleteLandingSlotGroup();
     }
 
     hexCenter(col, row) {
@@ -166,6 +179,9 @@ class View {
 
     drawMap(model) {
         console.log(model);
+
+        this.deleteAllButtons();
+        
         let canvas = this.canvas;
         let context = this.context;
         context.fillStyle = COLOR_BACKGROUND;
@@ -176,6 +192,8 @@ class View {
         }
 
         this.drawGrid();
+
+        this.presentValidMoves();
     }
 
     drawGrid() {
@@ -318,7 +336,11 @@ class View {
             button.classList = "slotButton";
             button.style.width = buttonWidth + "px";
             button.style.height = buttonHeight + "px";
-            button.innerHTML = ships[i];
+            
+            if (ships[i] != null) {
+                button.classList = "ship";
+                button.style.backgroundColor = COLOR_PLAYER[ships[i]];
+            }
 
             button.col = col;
             button.row = row;
@@ -430,7 +452,9 @@ class View {
     /**
      * Configure buttons to allow only the given moves.
      */
-    presentValidMoves(obj) {
+    presentValidMoves(obj = this.validMoves) {
+        this.validMoves = obj;
+        
         // Disable all beach slot buttons
         this.applySlotButtons((b) => {
             b.disabled = true;

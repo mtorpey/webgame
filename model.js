@@ -448,6 +448,7 @@ class Model {
     listener;
     registerChangeListener(listener) {
         this.listener = listener;
+        this.broadcastChange(this.getValidMoves());
     }
     broadcastChange(obj) {
         this.listener.modelChanged(obj);
