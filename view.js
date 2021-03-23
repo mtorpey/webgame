@@ -293,7 +293,6 @@ class View {
 
         // Create the sail buttons
         for (let exitDirection of beach.exits) {
-            console.log("creating sail button", col, row, beachNo, exitDirection);
             this.createSailButton(col, row, beachNo, exitDirection)
         }
     }
@@ -341,16 +340,12 @@ class View {
     }
 
     createLandingSlotGroup(col, row, ships) {
-        let landingGroup = document.getElementById("landingGroup");
-        if (landingGroup) {
-            landingGroup.remove();
-        }
-        
+        console.assert(!document.getElementById("landingGroup"));
         let hexCenter = this.hexCenter(col, row);
         let buttonHeight = HEX_SIDE / 6;  // TODO: make this const
         let buttonWidth = HEX_SIDE / 3;
 
-        landingGroup = document.createElement("div");
+        let landingGroup = document.createElement("div");
         landingGroup.id = "landingGroup";
 
         // Create ship buttons
@@ -377,6 +372,13 @@ class View {
         landingGroup.style.top = hexCenter.y - buttonHeight/2 * ships.length + "px";
         //landingGroup.style.transform = "rotate(" + (Math.random() * Math.PI * 2) + "rad)"
         this.canvasContainer.appendChild(landingGroup);
+    }
+
+    deleteLandingSlotGroup() {
+        let landingGroup = document.getElementById("landingGroup");
+        if (landingGroup) {
+            landingGroup.remove();
+        }
     }
 
     createSailButton(col, row, beachNo, exitDirection) {
@@ -439,6 +441,7 @@ class View {
         });
         this.applyIslandNameButtons((b) => {b.disabled = true;});
         this.applySailButtons((b) => {b.disabled = true;});
+        this.deleteLandingSlotGroup();
  
         // Enable the beach slot buttons described in the object
         if (obj.beachSlots) {
@@ -446,9 +449,9 @@ class View {
                 let button = this.getSlotButton(slot.col, slot.row, slot.beachNo, slot.slotNo);
                 button.disabled = false;
                 // Handle drops
-                button.addEventListener("dragover", e => e.preventDefault());
-                button.addEventListener("dragenter", e => button.classList.add("dragHover"));
-                button.addEventListener("dragleave", e => button.classList.remove("dragHover"));
+                button.ondragover = (e => e.preventDefault());
+                button.ondragenter = (e => button.classList.add("dragHover"));
+                button.ondragleave = (e => button.classList.remove("dragHover"));
                 button.ondrop = (e => {e.preventDefault(); controller.landingShipDraggedToSlot(e.dataTransfer.getData("slotNo"), e.target);});
             }
         }

@@ -207,15 +207,14 @@ class Model {
 
         // Fleet enters the neighbouring hex
         let fleetHex = hexNeighbor(col, row, direction);
-        let fleetTile = this.getTile(fleetHex.col, fleetHex.row);
-        if (fleetTile === null) {
+        this.landingTile = this.getTile(fleetHex.col, fleetHex.row);
+        if (this.landingTile === null) {
             this.placeRandomTile(fleetHex.col, fleetHex.row, direction);
-            fleetTile = this.getTile(fleetHex.col, fleetHex.row);
-            console.assert(fleetTile != null);
-            this.landingTile = fleetTile;
+            this.landingTile = this.getTile(fleetHex.col, fleetHex.row);
+            console.assert(this.landingTile != null);
             this.broadcastChange({
                 type: ChangeType.TILE_ADDED,
-                tile: fleetTile
+                tile: this.landingTile
             });
         }
 
