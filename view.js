@@ -40,7 +40,7 @@ class View {
         default: console.assert(false, "change type '" + obj.type + "' cannot be handled");
         }
     }
-    
+
     get canvas() {
         return document.getElementById('gameCanvas');
     }
@@ -169,7 +169,7 @@ class View {
             this.hexPoint(col, row, direction + 1)
         );
     }
-    
+
     midPoint(point1, point2) {
         return {
             x: (point1.x + point2.x) / 2,
@@ -181,7 +181,7 @@ class View {
         console.log(model);
 
         this.deleteAllButtons();
-        
+
         let canvas = this.canvas;
         let context = this.context;
         context.fillStyle = COLOR_BACKGROUND;
@@ -317,7 +317,7 @@ class View {
 
     createSlotButtons(col, row, beachNo, direction, ships) {
         let capacity = ships.length;
-        
+
         let angle = direction * Math.PI / 3;
         let hexCenter = this.hexCenter(col, row);
         let r32 = Math.sqrt(3)/2;
@@ -336,7 +336,7 @@ class View {
             button.classList = "slotButton";
             button.style.width = buttonWidth + "px";
             button.style.height = buttonHeight + "px";
-            
+
             if (ships[i] != null) {
                 button.classList = "ship";
                 button.style.backgroundColor = COLOR_PLAYER[ships[i]];
@@ -454,7 +454,7 @@ class View {
      */
     presentValidMoves(obj = this.validMoves) {
         this.validMoves = obj;
-        
+
         // Disable all beach slot buttons
         this.applySlotButtons((b) => {
             b.disabled = true;
@@ -466,7 +466,7 @@ class View {
         this.applyIslandNameButtons((b) => {b.disabled = true;});
         this.applySailButtons((b) => {b.disabled = true;});
         this.deleteLandingSlotGroup();
- 
+
         // Enable the beach slot buttons described in the object
         if (obj.beachSlots) {
             for (let slot of obj.beachSlots) {

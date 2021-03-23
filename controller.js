@@ -1,14 +1,14 @@
 class Controller {
     model;
     view;
-    
+
     constructor(model, view) {
         this.model = model;
         this.view = view;
         this.draw();
         model.registerChangeListener(view);
     }
-    
+
     draw() {
         this.view.drawMap(this.model);
     }

@@ -123,7 +123,7 @@ class Model {
             currentPlayer: this.currentPlayer
         });
     }
-    
+
     chooseExpansionIsland(col, row) {
         console.assert(this.turnPhase === TurnPhase.START_OF_TURN);
 
@@ -282,7 +282,7 @@ class Model {
         if (this.sailingFleet.length == 0) {
             this.prepareToSailIfAppropriate();
         }
-        
+
         this.broadcastChange(this.getValidMoves());
     }
 
@@ -313,7 +313,7 @@ class Model {
         obj.type = ChangeType.VALID_MOVES;
         return obj;
     }
-    
+
     /**
      * Object describing valid slots for the current player to place a ship during initial placement.
      */
@@ -614,7 +614,7 @@ function hexNeighbor(col, row, direction) {
     switch (direction) {
     case 0: row -= 1; break;
     case 1: col += 1; row += isEven; break;
-    case 2: col += 1; row += 1 + isEven; break;            
+    case 2: col += 1; row += 1 + isEven; break;
     case 3: row += 1; break;
     case 4: col -= 1; row += 1 + isEven; break;
     case 5: col -= 1; row += isEven; break;
