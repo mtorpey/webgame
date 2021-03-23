@@ -423,7 +423,11 @@ class Tile {
     place(col, row, rotation) {
         this.col = col;
         this.row = row;
-        this.rotation = rotation;
+        this.rotate(rotation);
+    }
+
+    rotate(rotation) {
+        throw new Error("This should be overridden!");
     }
 
     nrShipsOnTile(playerNo = null) {
@@ -455,6 +459,14 @@ class IslandTile extends Tile {
         for (let beach of this.beaches) {
             beach.beachNo = i;
             i++;
+        }
+    }
+
+    rotate(rotation) {
+        for (let beach of this.beaches) {
+            for (let i = 0; i < beach.exits.length; i++) {
+                beach.exits[i] = (beach.exits[i] + rotation) % 6;
+            }
         }
     }
 

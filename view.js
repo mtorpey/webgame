@@ -246,8 +246,8 @@ class View {
             this.createSlotButtons(col, row, beachNo, exit, beach.ships);
         } else if (beach.exits.length == 2) {
             // Double beach
-            console.assert(beach.exits[0] + 1 === beach.exits[1]);
-            let cornerNo = beach.exits[0] + 1;
+            console.assert((beach.exits[0] + 1) % 6 === beach.exits[1]);
+            let cornerNo = (beach.exits[0] + 1) % 6;
 
             // Get the corner between the two beaches
             let cornerPoint = this.hexPoint(col, row, cornerNo);
@@ -262,23 +262,23 @@ class View {
         } else {
             // Triple beach
             console.assert(beach.exits.length == 3);
-            console.assert(beach.exits[0] + 1 === beach.exits[1]);
-            console.assert(beach.exits[0] + 2 === beach.exits[2]);
+            console.assert((beach.exits[0] + 1) % 6 === beach.exits[1]);
+            console.assert((beach.exits[0] + 2) % 6 === beach.exits[2]);
 
-            let firstExit = beach.exits[0];
+            let exits = beach.exits;
             let points = [
                 this.midPoint(
-                    this.hexMidEdge(col, row, firstExit),
-                    this.hexPoint(col, row, firstExit)
+                    this.hexMidEdge(col, row, exits[0]),
+                    this.hexPoint(col, row, exits[0])
                 ),
-                this.hexPoint(col, row, firstExit + 1),
-                this.hexPoint(col, row, firstExit + 2),
+                this.hexPoint(col, row, exits[1]),
+                this.hexPoint(col, row, exits[2]),
                 this.midPoint(
-                    this.hexMidEdge(col, row, firstExit + 2),
-                    this.hexPoint(col, row, firstExit + 3)
+                    this.hexMidEdge(col, row, exits[2]),
+                    this.hexPoint(col, row, (exits[2] + 1) % 6)
                 )
             ]
-            let control = this.hexMidEdge(col, row, firstExit + 1);
+            let control = this.hexMidEdge(col, row, exits[1]);
             context.moveTo(points[0].x, points[0].y);
             context.lineTo(points[1].x, points[1].y);
             context.lineTo(points[2].x, points[2].y);
@@ -287,7 +287,7 @@ class View {
                           points[0].x, points[0].y,
                           HEX_SIDE * 3 / 2);
             context.lineTo(points[1].x, points[1].y);
-            this.createSlotButtons(col, row, beachNo, firstExit + 1, beach.ships);
+            this.createSlotButtons(col, row, beachNo, exits[1], beach.ships);
         }
         context.fill();
 
