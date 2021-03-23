@@ -31,6 +31,7 @@ class Model {
     beachesAvailableForExpansion;
 
     sailingFleet;
+    tileJustLeft;
     landingTile;
 
     constructor(names) {
@@ -215,6 +216,7 @@ class Model {
         });
 
         // Fleet enters the neighbouring hex
+        this.tileJustLeft = island;
         let fleetHex = hexNeighbor(col, row, direction);
         this.landingTile = this.getTile(fleetHex.col, fleetHex.row);
         if (this.landingTile === null) {
@@ -227,10 +229,22 @@ class Model {
             });
         }
 
-        // Prepare to land
+        this.prepareToLand();
+        this.broadcastChange(this.getValidMoves());
+    }
+
+    prepareToLand() {
         this.turnPhase = TurnPhase.LANDING;
         this.validLandingBeaches = this.landingTile.beaches.filter(b => b.hasEmptyBeachSlots());
-        this.broadcastChange(this.getValidMoves());
+        if (this.validLandingBeaches.length == 0) {
+            // Bounce back
+            let t = this.tileJustLeft;
+            this.tileJustLeft = this.landingTile;
+            this.landingTile = t;
+            console.assert(this.landingTile);
+            console.log("No more room: bouncing back");
+            this.prepareToLand();
+        }
     }
 
     landShip(landingShipNo, beachNo, slotNo) {
@@ -247,6 +261,8 @@ class Model {
             slotNo: slotNo,
             playerNo: owner
         });
+
+        this.prepareToLand();
 
         if (this.sailingFleet.length == 0) {
             this.prepareToSailIfAppropriate();
