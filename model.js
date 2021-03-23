@@ -33,6 +33,7 @@ class Model {
     sailingFleet;
     tileJustLeft;
     landingTile;
+    landedOneOnEachBeach;
 
     constructor(names) {
         // Setup players
@@ -229,27 +230,42 @@ class Model {
             });
         }
 
+        this.setValidLandingBeaches();
+        this.landedOneOnEachBeach = false;
         this.prepareToLand();
         this.broadcastChange(this.getValidMoves());
     }
 
     prepareToLand() {
         this.turnPhase = TurnPhase.LANDING;
-        this.validLandingBeaches = this.landingTile.beaches.filter(b => b.hasEmptyBeachSlots());
         if (this.validLandingBeaches.length == 0) {
+            this.setValidLandingBeaches();
+            this.landedOneOnEachBeach = true;
+        }
+        if (!this.landingTile.hasEmptyBeachSlots()) {
             // Bounce back
             let t = this.tileJustLeft;
             this.tileJustLeft = this.landingTile;
             this.landingTile = t;
+            this.landedOneOnEachBeach = false;
             console.assert(this.landingTile);
             console.log("No more room: bouncing back");
+            this.setValidLandingBeaches();
             this.prepareToLand();
         }
+    }
+
+    setValidLandingBeaches() {
+        this.validLandingBeaches = this.landingTile.beaches.filter(b => b.hasEmptyBeachSlots());
     }
 
     landShip(landingShipNo, beachNo, slotNo) {
         let owner = this.sailingFleet[landingShipNo];
         this.sailingFleet.splice(landingShipNo, 1);
+        if (!this.landedOneOnEachBeach) {
+            let n = this.validLandingBeaches.indexOf(this.landingTile.beaches[beachNo]);
+            this.validLandingBeaches.splice(n, 1);
+        }
 
         console.log(beachNo, slotNo, owner);
         this.landingTile.addShip(beachNo, slotNo, owner);
