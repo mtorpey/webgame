@@ -267,7 +267,6 @@ class Model {
             this.validLandingBeaches.splice(n, 1);
         }
 
-        console.log(beachNo, slotNo, owner);
         this.landingTile.addShip(beachNo, slotNo, owner);
         this.broadcastChange({
             type: ChangeType.SHIP_ADDED,

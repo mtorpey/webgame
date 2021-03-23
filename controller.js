@@ -19,7 +19,7 @@ class Controller {
         case TurnPhase.EXPANDING:
             this.expandAtSlot(button.beachNo, button.slotNo); break;
         case TurnPhase.LANDING:
-            console.log("Ship should land at", button.col, button.row, button.beachNo, button.slotNo); break;
+            this.model.landShip(0, button.beachNo, button.slotNo); break;  // First ship
         default: console.assert(false, "beach button click in phase '" + this.model.turnPhase + "' cannot be handled");
         }
         button.blur();
