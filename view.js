@@ -265,6 +265,7 @@ class View {
         button.style.height = buttonHeight + "px";
         button.disabled = true;
         button.innerHTML = name + (value > 0 ? "<br>" + value : "");
+        button.style.fontSize = this.hexSide * 0.17 + "px";
         button.style.top = y + "px";
         button.style.left = x + "px";
 
