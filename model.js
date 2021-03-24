@@ -54,7 +54,7 @@ class Model {
             new Beach([4], 3),
             new Beach([5], 3)
         ]);
-        this.placeTile(3, 2, 0, this.tonga);
+        this.placeTile(0, 0, 0, this.tonga);
 
         // Tiles in the supply
         this.tileSupply = [

@@ -14,11 +14,13 @@ const COLOR_PLAYER = [
 
 class View {
 
-    hexSide = 125;
-    left = 30;
-    top = 0;//-360;
+    hexSide = 300;
+    left = -640;
+    top = -360;
 
-    slotButtons;
+    hexPositions = new Map();
+
+    slotButtons = new Map();
     slotGroups = new Map();
     islandNameButtons = new Map();
     sailButtons = new Map();
@@ -59,64 +61,58 @@ class View {
     }
 
     rescaleToInclude(col, row) {
-        // Does the canvas currently show this tile?
-        let canvas = this.canvas;
-        while (this.hexPoint(col, row, 5).x < 0
-               || this.hexPoint(col, row, 2).x > canvas.width
-               || this.hexPoint(col, row, 0).y < 0
-               || this.hexPoint(col, row, 3).y > canvas.height) {
-            this.hexSide *= 0.95;
+        this.hexPositions.set({col: col, row: row});
+
+        let center = this.hexCenter(col, row);
+        let top = center.y;
+        let bottom = center.y;
+        let left = center.x;
+        let right = center.x;
+
+        for (let hex of this.hexPositions.keys()) {
+            top = Math.min(top, this.hexPoint(hex.col, hex.row, 0).y);
+            bottom = Math.max(bottom, this.hexPoint(hex.col, hex.row, 3).y);
+            left = Math.min(left, this.hexPoint(hex.col, hex.row, 5).x);
+            right = Math.max(right, this.hexPoint(hex.col, hex.row, 2).x);
         }
+
+        top -= this.hexSide / 2;
+        bottom += this.hexSide / 2;
+        left -= this.hexSide / 2;
+        right += this.hexSide / 2;
+
+        center = {x: (right + left) / 2, y: (bottom + top) / 2};
+
+        let canvas = this.canvas;
+        let scaleX = (right - left) / canvas.width;
+        let scaleY = (bottom - top) / canvas.height;
+        this.top += center.y// - (bottom - top) / 2;
+        this.left += center.x// - (right - left) / 2;
+        if (scaleY > scaleX) {
+            this.top -= (bottom - top) / 2;
+            this.left -= (canvas.width * scaleY) / 2;
+        } else {
+            this.left -= (right - left) / 2;
+            this.top -= (canvas.height * scaleX) / 2;
+        }
+        let scale = Math.max(scaleX, scaleY);
+        this.top /= scale;
+        this.left /= scale;
+        this.hexSide /= scale;
+
         controller.draw();
     }
 
     saveSlotButton(col, row, beachNo, slotNo, button) {
-        if (!this.slotButtons)
-            this.slotButtons = [];
-        if (!this.slotButtons[col])
-            this.slotButtons[col] = [];
-        if (!this.slotButtons[col][row])
-            this.slotButtons[col][row] = [];
-        if (!this.slotButtons[col][row][beachNo])
-            this.slotButtons[col][row][beachNo] = [];
-        this.slotButtons[col][row][beachNo][slotNo] = button;
+        this.slotButtons.set(col + "," + row + "," + beachNo + "," + slotNo, button);
     }
 
     getSlotButton(col, row, beachNo, slotNo) {
-        if (this.slotButtons
-            && this.slotButtons[col]
-            && this.slotButtons[col][row]
-            && this.slotButtons[col][row][beachNo]
-            && this.slotButtons[col][row][beachNo][slotNo]) {
-            return this.slotButtons[col][row][beachNo][slotNo];
-        } else {
-            return null;
-        }
+        return this.slotButtons.get(col + "," + row + "," + beachNo + "," + slotNo);
     }
 
-    /**
-     * Apply a function to every slot button in the view.
-     *
-     * This is a deep nested array with holes, so is a bit complicated.
-     */
     applySlotButtons(f) {
-        if (this.slotButtons) {
-            for (let column of this.slotButtons) {
-                if (column) {
-                    for (let island of column) {
-                        if (island) {
-                            for (let beach of island) {
-                                if (beach) {
-                                    for (let slotButton of beach) {
-                                        f(slotButton);
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        }
+        this.slotButtons.forEach(f);
     }
 
     saveSlotGroup(col, row, beachNo, group) {
@@ -157,19 +153,17 @@ class View {
         for (let group of document.getElementsByClassName("beachGroup")) {
             group.remove();
         }
-        console.log("nothing: ", document.getElementsByClassName("slotButton"));
         this.applyIslandNameButtons(b => b.remove());
         this.islandNameButtons = new Map();
         this.applySailButtons(b => b.remove());
         this.sailButtons = new Map();
         this.deleteLandingSlotGroup();
-        console.log("deleted all buttons");
     }
 
     hexCenter(col, row) {
         let x = (3 / 2) * this.hexSide * col - this.left;
         let y = Math.sqrt(3) * this.hexSide * row - this.top;
-        if (col % 2 == 1) {
+        if (Math.abs(col % 2) == 1) {
             y += Math.sqrt(3)/2 * this.hexSide;
         }
         return {'x': x, 'y': y}
@@ -237,6 +231,7 @@ class View {
     }
 
     drawIsland(island) {
+        this.hexPositions.set({col: island.col, row: island.row});
         this.drawHex(island.col, island.row, this.hexSide, COLOR_GRID, COLOR_ISLAND);
         //this.writeIslandLabel(island.name, island.value, island.col, island.row);
         this.createIslandNameButton(island.name, island.value, island.col, island.row);
@@ -371,7 +366,7 @@ class View {
         // Create slot buttons
         for (let i = 0; i < capacity; i++) {
             let button = this.getSlotButton(col, row, beachNo, i);
-            if (button === null) {
+            if (!button) {
                 button = document.createElement("button");
                 button.addEventListener("click", () => controller.slotButtonClicked(button));
                 this.saveSlotButton(col, row, beachNo, i, button);
