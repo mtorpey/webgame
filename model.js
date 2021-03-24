@@ -72,7 +72,23 @@ class Model {
             new IslandTile("Tokelau", 3, [new Beach([5, 0], 3), new Beach([1, 2], 2), new Beach([4], 4)]),
             new IslandTile("Tuamotu", 3, [new Beach([4, 5, 0], 4), new Beach([1, 2], 4)]),
             new IslandTile("Tubuai", 2, [new Beach([1, 2], 3), new Beach([4, 5], 3)]),
-            new IslandTile("Tuvalu", 4, [new Beach([0], 4), new Beach([1, 2], 3), new Beach([4, 5], 2)])
+            new IslandTile("Tuvalu", 4, [new Beach([0], 4), new Beach([1, 2], 3), new Beach([4, 5], 2)]),
+            new SeaTile([0, 3], 3, [1, 5], 3, [2, 4], 3),
+            new SeaTile([0, 1], 0, [2, 3], 0, [4, 5], 0),
+            new SeaTile([0, 4], 4, [1, 3], 0, [2, 5], 2),
+            new SeaTile([0, 3], 4, [1, 5], 4, [2, 4], 4),
+            new SeaTile([0, 5], 2, [1, 2], 0, [3, 4], 0),
+            new SeaTile([0, 1], 4, [2, 3], 0, [4, 5], 3),
+            new SeaTile([0, 1], 2, [2, 3], 0, [4, 5], 4),
+            new SeaTile([0, 3], 3, [1, 5], 0, [2, 4], 2),
+            new SeaTile([0, 5], 0, [1, 2], 2, [3, 4], 2),
+            new SeaTile([0, 1], 2, [2, 3], 2, [4, 5], 2),
+            new SeaTile([0, 5], 0, [1, 2], 2, [3, 4], 3),
+            new SeaTile([0, 4], 3, [1, 3], 2, [2, 5], 4),
+            new SeaTile([0, 3], 4, [1, 5], 0, [2, 4], 3),
+            new SeaTile([0, 4], 4, [1, 3], 4, [2, 5], 3),
+            new SeaTile([0, 4], 3, [1, 3], 3, [2, 5], 4),
+            new SeaTile([0, 5], 2, [1, 2], 4, [3, 4], 3)
         ];
         this.tileSupply = this.tileSupply.sort(() => Math.random() - 0.5);
     }
@@ -216,8 +232,12 @@ class Model {
             beachNo: beach.beachNo
         });
 
+        this.sailToNextHex(col, row, direction);
+    }
+
+    sailToNextHex(col, row, direction) {
+        this.tileJustLeft = this.getTile(col, row);
         // Fleet enters the neighbouring hex
-        this.tileJustLeft = island;
         let fleetHex = hexNeighbor(col, row, direction);
         this.landingTile = this.getTile(fleetHex.col, fleetHex.row);
         if (this.landingTile === null) {
@@ -230,10 +250,20 @@ class Model {
             });
         }
 
-        this.setValidLandingBeaches();
-        this.landedOneOnEachBeach = false;
-        this.prepareToLand();
-        this.broadcastChange(this.getValidMoves());
+        if (this.landingTile.beaches) {
+            // Reach island
+            this.setValidLandingBeaches();
+            this.landedOneOnEachBeach = false;
+            this.prepareToLand();
+            this.broadcastChange(this.getValidMoves());
+        } else {
+            // Reach sea tile and carry on
+            this.sailToNextHex(
+                this.landingTile.col,
+                this.landingTile.row,
+                this.landingTile.exits[(direction + 3) % 6]
+            );
+        }
     }
 
     prepareToLand() {
@@ -398,15 +428,17 @@ class Model {
     getValidMovesReadyToSail() {
         let beachExits = [];
         for (let tile of this.tiles) {
-            for (let b = 0; b < tile.beaches.length; b++) {
-                if (!tile.beaches[b].hasEmptyBeachSlots()) {
-                    for (let exitDirection of tile.beaches[b].exits) {
-                        beachExits.push({
-                            col: tile.col,
-                            row: tile.row,
-                            //beachNo: b,  // this shouldn't be necessary
-                            exitDirection: exitDirection
-                        });
+            if (tile.beaches) {
+                for (let b = 0; b < tile.beaches.length; b++) {
+                    if (!tile.beaches[b].hasEmptyBeachSlots()) {
+                        for (let exitDirection of tile.beaches[b].exits) {
+                            beachExits.push({
+                                col: tile.col,
+                                row: tile.row,
+                                //beachNo: b,  // this shouldn't be necessary
+                                exitDirection: exitDirection
+                            });
+                        }
                     }
                 }
             }
@@ -549,12 +581,34 @@ class SeaTile extends Tile {
     /**
      * Creates a sea tile, but doesn't place it.
      *
-     * @param {list of 6 ints} exits Direction you leave if you enter at edge i
+     * @param {list of 2 ints} pathX Two sides of the hex that are joined
+     * @param {int} minCivX Minimum number of colours needed
      */
-    constructor(exits) {
+    constructor(path0, minCiv0, path1, minCiv1, path2, minCiv2) {
         super();
-        // TODO: check these are symmetric?
-        this.exits = exits;
+
+        this.exits = [];
+        this.minCivs = [];
+        let paths = [path0, path1, path2];
+        let minCivs = [minCiv0, minCiv1, minCiv2];
+        for (let i = 0; i < 3; i++) {
+            let path = paths[i];
+            let minCiv = minCivs[i];
+            this.exits[path[0]] = path[1];
+            this.exits[path[1]] = path[0];
+            this.minCivs[path[0]] = minCiv;
+            this.minCivs[path[1]] = minCiv;
+        }
+
+        for (let side = 0; side < 6; side++) {
+            console.assert(this.exits[side] >= 0);
+            console.assert(this.exits[side] < 6);
+            console.assert(this.minCivs[side] >= 0);
+        }
+    }
+
+    rotate(rotation) {
+        // TODO: rotate properly
     }
 
     nrShipsOnTile(playerNo = null) {

@@ -1,8 +1,10 @@
 const COLOR_EMPTYSPACE = null;
-const COLOR_BACKGROUND = 'royalblue';
+const COLOR_BACKGROUND = 'darkblue';
 const COLOR_GRID = 'dodgerblue';
+const COLOR_SEA = 'dodgerblue';
 const COLOR_ISLAND = 'darkgreen';
 const COLOR_BEACH = 'wheat';
+const COLOR_PATH = 'white';
 const COLOR_PLAYER = [
     'limegreen',
     'red',
@@ -37,7 +39,7 @@ class View {
         case ChangeType.SHIP_ADDED: this.addShip(obj.col, obj.row, obj.beachNo, obj.slotNo, obj.playerNo); break;
         case ChangeType.BEACH_EMPTIED: this.emptyBeach(obj.col, obj.row, obj.beachNo); break;
         case ChangeType.ISLAND_SELECTED: break;  // For now, do nothing.  Highlight maybe?
-        case ChangeType.TILE_ADDED: this.rescaleToInclude(obj.tile.col, obj.tile.row); this.drawIsland(obj.tile); break;
+        case ChangeType.TILE_ADDED: this.rescaleToInclude(obj.tile.col, obj.tile.row); this.drawTile(obj.tile); break;
         case ChangeType.NEXT_PLAYER: break;  // TODO: track this properly
         case ChangeType.VALID_MOVES: this.presentValidMoves(obj); break;
         default: console.assert(false, "change type '" + obj.type + "' cannot be handled");
@@ -210,7 +212,7 @@ class View {
         context.fillRect(0, 0, canvas.width, canvas.height);
 
         for (let tile of model.tiles) {
-            this.drawIsland(tile);
+            this.drawTile(tile);
         }
 
         this.drawGrid();
@@ -228,6 +230,44 @@ class View {
                 this.drawHex(col, row, this.hexSide, COLOR_GRID, COLOR_EMPTYSPACE);
             }
         }
+    }
+
+    drawTile(tile) {
+        if (tile.beaches) {
+            this.drawIsland(tile);
+        } else {
+            console.assert(tile.exits);
+            this.drawSeaTile(tile);
+        }
+    }
+
+    drawSeaTile(tile) {
+        this.hexPositions.set({col: tile.col, row: tile.row});
+        this.drawHex(tile.col, tile.row, this.hexSide, COLOR_GRID, COLOR_SEA);
+        for (let side = 0; side < 6; side++) {
+            this.drawPath(tile.col, tile.row, side, tile.exits[side], tile.minCivs[side]);
+        }
+    }
+
+    drawPath(col, row, entry, exit, limit) {
+        let startPt = this.hexMidEdge(col, row, entry);
+        let endPt = this.hexMidEdge(col, row, exit);
+        let center = this.hexCenter(col, row);
+        let context = this.context;
+        context.beginPath();
+        context.strokeStyle = COLOR_PATH;
+        context.moveTo(startPt.x, startPt.y);
+        let radius;
+        let diff = Math.abs(entry - exit);
+        if (diff == 1 || diff == 5) {
+            radius = this.hexSide / 2.5;
+        } else if (diff == 2 || diff == 4) {
+            radius = this.hexSide / 1;
+        } else {
+            radius = this.hexSide * 10;
+        }
+        context.arcTo(center.x, center.y, endPt.x, endPt.y, radius);
+        context.stroke();
     }
 
     drawIsland(island) {
@@ -467,6 +507,7 @@ class View {
         sailButton.style.top = y - buttonWidth/2 + "px";
         sailButton.style.transform = "rotate(" + (angle) + "rad)"
         sailButton.innerHTML = "^";
+        sailButton.style.fontSize = this.hexSide * 0.17 + "px";
         sailButton.disabled = true;
         sailButton.col = col;
         sailButton.row = row;
