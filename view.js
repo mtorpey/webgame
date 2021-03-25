@@ -38,9 +38,10 @@ class View {
     modelChanged(obj) {
         switch(obj.type) {
         case ChangeType.SHIP_ADDED: this.addShip(obj.col, obj.row, obj.beachNo, obj.slotNo, obj.playerNo); break;
+        case ChangeType.SHIP_RETRIEVED: this.retrieveShip(obj.col, obj.row, obj.beachNo, obj.slotNo); break;
         case ChangeType.BEACH_EMPTIED: this.emptyBeach(obj.col, obj.row, obj.beachNo); break;
         case ChangeType.ISLAND_SELECTED: break;  // For now, do nothing.  Highlight maybe?
-        case ChangeType.TILE_ADDED: this.rescaleToInclude(obj.tile.col, obj.tile.row); this.drawTile(obj.tile); break;
+        case ChangeType.TILE_ADDED: this.rescaleToInclude(obj.tile.col, obj.tile.row); this.drawTile(obj.tile); this.drawGrid(); break;
         case ChangeType.NEXT_PLAYER: this.turnView.innerHTML = "Player " + obj.currentPlayer + "'s turn"; break;  // TODO: track this properly
         case ChangeType.VALID_MOVES: this.presentValidMoves(obj); break;
         case ChangeType.SUPPLIES_CHANGED: this.presentSupplies(obj.supplies); break;
@@ -571,12 +572,20 @@ class View {
         button.classList = ["ship"];
     }
 
+    retrieveShip(col, row, beachNo, slotNo) {
+        let button = this.getSlotButton(col, row, beachNo, slotNo);
+        button.style.backgroundColor = null;
+        button.disabled = true;
+        button.classList = ["slotButton"];
+    }
+
     emptyBeach(col, row, beachNo) {
         let slotNo = 0;
         let button;
         while (button = this.getSlotButton(col, row, beachNo, slotNo++)) {
-            button.classList = ["slotButton"];
             button.style.backgroundColor = null;
+            button.disabled = true;
+            button.classList = ["slotButton"];
         }
     }
 

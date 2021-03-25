@@ -1,6 +1,7 @@
 const TurnPhase = {
     INITIAL_PLACEMENT: "initial placement",  // place 2 ships each on Tonga
-    START_OF_TURN: "start",  // choose an island to expand (or royal/special)
+    RETRIEVE_ONE: "retrieve one",  // empty supply, so grab one ship before expansion
+    CHOOSING_EXPANSION_ISLAND: "choosing expansion island",  // choose an island to expand (or royal/special)
     EXPANDING: "expanding",  // choose the beaches to place your new ships
     READY_TO_SAIL: "ready to sail",  // choose a beach to sail from
     LANDING: "landing",  // choose which beaches the ships land on
@@ -9,6 +10,7 @@ const TurnPhase = {
 
 const ChangeType = {
     SHIP_ADDED: "ship added",
+    SHIP_RETRIEVED: "ship retrieved",
     BEACH_EMPTIED: "beach emptied",
     ISLAND_SELECTED: "island selected",  // for expansion
     TILE_ADDED: "tile added",
@@ -16,6 +18,8 @@ const ChangeType = {
     NEXT_PLAYER: "next player",
     VALID_MOVES: "valid moves"
 }
+
+const MAX_SUPPLY = 15;
 
 class Model {
     tiles;
@@ -45,9 +49,8 @@ class Model {
         console.assert(this.nrPlayers in [2,3,4,5,6]);
         this.supplies = [];
         for (let p = 0; p < this.nrPlayers; p++) {
-            this.supplies[p] = 15;
+            this.supplies[p] = MAX_SUPPLY;
         }
-        console.log(this.supplies);
         this.currentPlayer = 0;
         this.turnPhase = TurnPhase.INITIAL_PLACEMENT;
 
@@ -137,7 +140,7 @@ class Model {
 
         // Is initial placement done?
         if (this.tonga.nrShipsOnTile(this.currentPlayer) === 2) {
-            this.turnPhase = TurnPhase.START_OF_TURN;
+            this.turnPhase = TurnPhase.CHOOSING_EXPANSION_ISLAND;
         }
 
         // Broadcast valid moves
@@ -154,13 +157,39 @@ class Model {
         });
     }
 
+    retrieveOne(col, row, beachNo, slotNo) {
+        console.assert(this.turnPhase === TurnPhase.RETRIEVE_ONE);
+        let island = this.getTile(col, row);
+        let beach = island.beaches[beachNo];
+        console.assert(beach.ships[slotNo] === this.currentPlayer);
+
+        beach.ships[slotNo] = null;
+        this.broadcastChange({
+            type: ChangeType.SHIP_RETRIEVED,
+            col: col,
+            row: row,
+            beachNo: beachNo,
+            slotNo: slotNo
+        });
+        
+        this.supplies[this.currentPlayer] ++;
+        this.broadcastChange({
+            type: ChangeType.SUPPLIES_CHANGED,
+            supplies: this.supplies
+        });
+
+        this.turnPhase = TurnPhase.CHOOSING_EXPANSION_ISLAND;
+        this.broadcastChange(this.getValidMoves());
+    }
+
     chooseExpansionIsland(col, row) {
-        console.assert(this.turnPhase === TurnPhase.START_OF_TURN);
+        console.assert(this.turnPhase === TurnPhase.CHOOSING_EXPANSION_ISLAND);
 
         // Get the island
         let island = this.getTile(col, row);
         let beaches = island.beaches;
-        console.assert(island.nrShipsOnTile(this.currentPlayer) > 0);
+        console.assert(island.nrShipsOnTile(this.currentPlayer) > 0
+                       || this.supplies[this.currentPlayer] === MAX_SUPPLY);
         console.assert(island.hasEmptyBeachSlots());
 
         // Set it as the island for expansion this turn
@@ -168,10 +197,16 @@ class Model {
         this.beachesAvailableForExpansion = beaches.map(b => b.hasEmptyBeachSlots());
 
         // Record number of ships to be added
-        this.shipsToAddInExpansion = Math.min(
-            island.nrShipsOnTile(this.currentPlayer),  // ships to double
-            this.beachesAvailableForExpansion.filter(a => a).length  // free beaches
-        );
+        if (this.supplies[this.currentPlayer] === MAX_SUPPLY) {
+            // Nothing on the board, so add 2 to Tonga or 1 anywhere else
+            this.shipsToAddInExpansion = (island === this.tonga ? 2 : 1);
+        } else {
+            this.shipsToAddInExpansion = Math.min(
+                island.nrShipsOnTile(this.currentPlayer),  // ships to double
+                this.beachesAvailableForExpansion.filter(a => a).length,  // free beaches
+                this.supplies[this.currentPlayer]  // ships available in supply
+            );
+        }
 
         // Broadcast change
         this.broadcastChange({
@@ -229,7 +264,11 @@ class Model {
         if (obj.beachExits.length == 0) {
             // Turn finished
             this.nextPlayer();
-            this.turnPhase = TurnPhase.START_OF_TURN;
+            if (this.supplies[this.currentPlayer] === 0) {
+                this.turnPhase = TurnPhase.RETRIEVE_ONE;
+            } else {
+                this.turnPhase = TurnPhase.CHOOSING_EXPANSION_ISLAND;
+            }
         }
     }
 
@@ -278,7 +317,6 @@ class Model {
             this.broadcastChange(this.getValidMoves());
         } else {
             // Die if not enough colours in fleet
-            console.log(this.sailingFleet, new Set(this.sailingFleet).size);
             if (new Set(this.sailingFleet).size < this.landingTile.minCivs[(direction+3)%6]) {
                 for (let i = 0; i < this.sailingFleet.length; i++) {
                     this.supplies[this.sailingFleet[i]] ++;
@@ -367,7 +405,8 @@ class Model {
         // Get the appropriate types of moves
         switch(this.turnPhase) {
         case TurnPhase.INITIAL_PLACEMENT: obj = this.getValidMovesInitialPlacement(); break;
-        case TurnPhase.START_OF_TURN: obj = this.getValidMovesStartTurn(); break;
+        case TurnPhase.RETRIEVE_ONE: obj = this.getValidMovesRetrieveOne(); break;
+        case TurnPhase.CHOOSING_EXPANSION_ISLAND: obj = this.getValidMovesChoosingExpansionIsland(); break;
         case TurnPhase.EXPANDING: obj = this.getValidMovesExpanding(); break;
         case TurnPhase.READY_TO_SAIL: obj = this.getValidMovesReadyToSail(); break;
         case TurnPhase.LANDING: obj = this.getValidMovesLanding(); break;
@@ -404,6 +443,36 @@ class Model {
     }
 
     /**
+     * Object describing valid beaches from which a ship may be retrieved.
+     *
+     * This applies when the current player starts their turn with no ships in their supply.
+     */
+    getValidMovesRetrieveOne() {
+        let validSlots = [];
+        for (let tile of this.tiles) {
+            console.log("considering tile", tile);
+            if (tile.beaches) {
+                console.log("beaches here!");
+                for (let beach of tile.beaches) {
+                    console.log("considering beach", beach);
+                    for (let i = 0; i < beach.capacity; i++) {
+                        console.log("considering slot with", beach.ships[i]);
+                        if (beach.ships[i] === this.currentPlayer) {
+                            validSlots.push({
+                                col: tile.col,
+                                row: tile.row,
+                                beachNo: beach.beachNo,
+                                slotNo: i
+                            });
+                        }
+                    }
+                }
+            }
+        }
+        return {beachSlots: validSlots};
+    }
+    
+    /**
      * Object describing valid moves at start of a regular turn.
      *
      * This will include:
@@ -411,16 +480,20 @@ class Model {
      * - coords of islands you can claim as Royal Islands;
      * - the "special" option to remove all ships and get a new island.
      */
-    getValidMovesStartTurn() {
-        let expandableIslands = [];
-        // TODO: check player stocks (15 ships each) - max expansion
+    getValidMovesChoosingExpansionIsland() {
+        // If zero ships of this colour on the board, then can add anywhere
+        let nothingOnBoard = (this.supplies[this.currentPlayer] === MAX_SUPPLY);
+        
         // TODO: special case for empty stock
+        let expandableIslands = [];
         for (let tile of this.tiles) {
-            if (tile.nrShipsOnTile(this.currentPlayer) >= 1
-                && tile.hasEmptyBeachSlots()) {
+            if ((tile.nrShipsOnTile(this.currentPlayer) >= 1
+                 && tile.hasEmptyBeachSlots())
+                || (nothingOnBoard && tile.beaches)) {
                 expandableIslands.push({col: tile.col, row: tile.row});
             }
         }
+
         return {expandableIslands: expandableIslands};
     }
 

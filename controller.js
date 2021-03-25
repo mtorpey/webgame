@@ -21,6 +21,8 @@ class Controller {
         switch(this.model.turnPhase) {
         case TurnPhase.INITIAL_PLACEMENT:
             this.initialPlacement(button.beachNo, button.slotNo); break;
+        case TurnPhase.RETRIEVE_ONE:
+            this.model.retrieveOne(button.col, button.row, button.beachNo, button.slotNo); break;
         case TurnPhase.EXPANDING:
             this.expandAtSlot(button.beachNo, button.slotNo); break;
         case TurnPhase.LANDING:

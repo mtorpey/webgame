@@ -45,6 +45,10 @@ button.ship {
     border: 1px solid black;
 }
 
+button.ship:hover:enabled {
+    background-color: tan !important;
+}
+
 button.islandName {
     position: absolute;
     /*font: 100% Arial;*/
