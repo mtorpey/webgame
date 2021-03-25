@@ -26,6 +26,7 @@ class View {
     slotGroups = new Map();
     islandNameButtons = new Map();
     sailButtons = new Map();
+    pathLabels = new Map();
 
     validMoves = {};
 
@@ -40,8 +41,9 @@ class View {
         case ChangeType.BEACH_EMPTIED: this.emptyBeach(obj.col, obj.row, obj.beachNo); break;
         case ChangeType.ISLAND_SELECTED: break;  // For now, do nothing.  Highlight maybe?
         case ChangeType.TILE_ADDED: this.rescaleToInclude(obj.tile.col, obj.tile.row); this.drawTile(obj.tile); break;
-        case ChangeType.NEXT_PLAYER: break;  // TODO: track this properly
+        case ChangeType.NEXT_PLAYER: this.turnView.innerHTML = "Player " + obj.currentPlayer + "'s turn"; break;  // TODO: track this properly
         case ChangeType.VALID_MOVES: this.presentValidMoves(obj); break;
+        case ChangeType.SUPPLIES_CHANGED: this.presentSupplies(obj.supplies); break;
         default: console.assert(false, "change type '" + obj.type + "' cannot be handled");
         }
     }
@@ -60,6 +62,14 @@ class View {
 
     get context() {
         return this.canvas.getContext('2d');
+    }
+
+    get turnView() {
+        return document.getElementById('turnView');
+    }
+
+    get supplyView() {
+        return document.getElementById('supplyView');
     }
 
     rescaleToInclude(col, row) {
@@ -123,6 +133,14 @@ class View {
 
     getSlotGroup(col, row, beachNo) {
         return this.slotGroups.get(col + "," + row + "," + beachNo);
+    }
+
+    savePathLabel(col, row, side, button) {
+        this.pathLabels.set(col + "," + row + "," + side, button);
+    }
+
+    getPathLabel(col, row, side) {
+        return this.pathLabels.get(col + "," + row + "," + side);
     }
 
     saveIslandNameButton(col, row, button) {
@@ -245,11 +263,14 @@ class View {
         this.hexPositions.set({col: tile.col, row: tile.row});
         this.drawHex(tile.col, tile.row, this.hexSide, COLOR_GRID, COLOR_SEA);
         for (let side = 0; side < 6; side++) {
-            this.drawPath(tile.col, tile.row, side, tile.exits[side], tile.minCivs[side]);
+            this.drawPath(tile.col, tile.row, side, tile.exits[side]);
+            if (tile.minCivs[side] > 0) {
+                this.createPathLabel(tile.col, tile.row, side, tile.minCivs[side]);
+            }
         }
     }
 
-    drawPath(col, row, entry, exit, limit) {
+    drawPath(col, row, entry, exit) {
         let startPt = this.hexMidEdge(col, row, entry);
         let endPt = this.hexMidEdge(col, row, exit);
         let center = this.hexCenter(col, row);
@@ -268,6 +289,34 @@ class View {
         }
         context.arcTo(center.x, center.y, endPt.x, endPt.y, radius);
         context.stroke();
+    }
+
+    createPathLabel(col, row, side, minCivs) {
+        let angle = side * Math.PI / 3;
+        let hexCenter = this.hexCenter(col, row);
+        let r32 = Math.sqrt(3)/2;
+
+        let x = hexCenter.x + Math.sin(angle) * this.hexSide * r32*0.7;
+        let y = hexCenter.y - Math.cos(angle) * this.hexSide * r32*0.7;
+        let buttonWidth = this.hexSide / 4;
+
+        let button = this.getPathLabel(col, row, side);
+        if (!button) {
+            button = document.createElement("button");
+            this.savePathLabel(col, row, side, button);
+            this.canvasContainer.appendChild(button);
+        }
+        button.classList = "pathLabel"
+        button.style.width = buttonWidth + "px";
+        button.style.height = buttonWidth + "px";
+        button.style.left = x - buttonWidth/2 + "px";
+        button.style.top = y - buttonWidth/2 + "px";
+        button.innerHTML = "" + minCivs;
+        button.style.fontSize = this.hexSide * 0.17 + "px";
+        button.disabled = true;
+        button.col = col;
+        button.row = row;
+        button.side = side;
     }
 
     drawIsland(island) {
@@ -587,6 +636,10 @@ class View {
         if (obj.landingShips) {
             this.createLandingSlotGroup(obj.landingCol, obj.landingRow, obj.landingShips);
         }
+    }
+
+    presentSupplies(supplies) {
+        this.supplyView.innerHTML = "Ships in supply: " + supplies;
     }
 
     drawHex(col, row, side, strokeColor, fillColor) {

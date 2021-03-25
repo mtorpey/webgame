@@ -12,6 +12,7 @@ const ChangeType = {
     BEACH_EMPTIED: "beach emptied",
     ISLAND_SELECTED: "island selected",  // for expansion
     TILE_ADDED: "tile added",
+    SUPPLIES_CHANGED: "supplies changed",
     NEXT_PLAYER: "next player",
     VALID_MOVES: "valid moves"
 }
@@ -19,9 +20,11 @@ const ChangeType = {
 class Model {
     tiles;
     tileSupply;
+
     names;
     nrPlayers;
     currentPlayer;
+    supplies;
     turnPhase;
 
     tonga;
@@ -40,6 +43,11 @@ class Model {
         this.names = names;
         this.nrPlayers = names.length;
         console.assert(this.nrPlayers in [2,3,4,5,6]);
+        this.supplies = [];
+        for (let p = 0; p < this.nrPlayers; p++) {
+            this.supplies[p] = 15;
+        }
+        console.log(this.supplies);
         this.currentPlayer = 0;
         this.turnPhase = TurnPhase.INITIAL_PLACEMENT;
 
@@ -73,21 +81,21 @@ class Model {
             new IslandTile("Tuamotu", 3, [new Beach([4, 5, 0], 4), new Beach([1, 2], 4)]),
             new IslandTile("Tubuai", 2, [new Beach([1, 2], 3), new Beach([4, 5], 3)]),
             new IslandTile("Tuvalu", 4, [new Beach([0], 4), new Beach([1, 2], 3), new Beach([4, 5], 2)]),
-            new SeaTile([0, 3], 3, [1, 5], 3, [2, 4], 3),
             new SeaTile([0, 1], 0, [2, 3], 0, [4, 5], 0),
-            new SeaTile([0, 4], 4, [1, 3], 0, [2, 5], 2),
-            new SeaTile([0, 3], 4, [1, 5], 4, [2, 4], 4),
-            new SeaTile([0, 5], 2, [1, 2], 0, [3, 4], 0),
-            new SeaTile([0, 1], 4, [2, 3], 0, [4, 5], 3),
             new SeaTile([0, 1], 2, [2, 3], 0, [4, 5], 4),
-            new SeaTile([0, 3], 3, [1, 5], 0, [2, 4], 2),
-            new SeaTile([0, 5], 0, [1, 2], 2, [3, 4], 2),
             new SeaTile([0, 1], 2, [2, 3], 2, [4, 5], 2),
-            new SeaTile([0, 5], 0, [1, 2], 2, [3, 4], 3),
-            new SeaTile([0, 4], 3, [1, 3], 2, [2, 5], 4),
+            new SeaTile([0, 1], 4, [2, 3], 0, [4, 5], 3),
+            new SeaTile([0, 3], 3, [1, 5], 0, [2, 4], 2),
+            new SeaTile([0, 3], 3, [1, 5], 3, [2, 4], 3),
             new SeaTile([0, 3], 4, [1, 5], 0, [2, 4], 3),
-            new SeaTile([0, 4], 4, [1, 3], 4, [2, 5], 3),
+            new SeaTile([0, 3], 4, [1, 5], 4, [2, 4], 4),
+            new SeaTile([0, 4], 3, [1, 3], 2, [2, 5], 4),
             new SeaTile([0, 4], 3, [1, 3], 3, [2, 5], 4),
+            new SeaTile([0, 4], 4, [1, 3], 0, [2, 5], 2),
+            new SeaTile([0, 4], 4, [1, 3], 4, [2, 5], 3),
+            new SeaTile([0, 5], 0, [1, 2], 2, [3, 4], 2),
+            new SeaTile([0, 5], 0, [1, 2], 2, [3, 4], 3),
+            new SeaTile([0, 5], 2, [1, 2], 0, [3, 4], 0),
             new SeaTile([0, 5], 2, [1, 2], 4, [3, 4], 3)
         ];
         this.tileSupply = this.tileSupply.sort(() => Math.random() - 0.5);
@@ -106,6 +114,7 @@ class Model {
 
     initialPlacement(beachNo, slotNo) {
         console.assert(this.turnPhase === TurnPhase.INITIAL_PLACEMENT);
+        console.assert(this.supplies[this.currentPlayer] > 0);
 
         // Add the ship
         this.tonga.addShip(beachNo, slotNo, this.currentPlayer);
@@ -115,7 +124,12 @@ class Model {
             row: this.tonga.row,
             beachNo: beachNo,
             slotNo: slotNo,
-            playerNo: this.currentPlayer
+            playerNo: this.currentPlayer,
+        });
+        this.supplies[this.currentPlayer] --;
+        this.broadcastChange({
+            type: ChangeType.SUPPLIES_CHANGED,
+            supplies: this.supplies
         });
 
         // Advance player turn
@@ -177,10 +191,16 @@ class Model {
         console.assert(this.turnPhase === TurnPhase.EXPANDING);
         console.assert(beachNo < this.expansionIsland.beaches.length);
         console.assert(slotNo < this.expansionIsland.beaches[beachNo].ships.length);
+        console.assert(this.supplies[this.currentPlayer] > 0);
 
         // Add a ship here
         // TODO: player supplies
         this.expansionIsland.addShip(beachNo, slotNo, this.currentPlayer);
+        this.supplies[this.currentPlayer] --;
+        this.broadcastChange({
+            type: ChangeType.SUPPLIES_CHANGED,
+            supplies: this.supplies
+        });
         this.shipsToAddInExpansion--;
         this.beachesAvailableForExpansion[beachNo] = false;
 
@@ -190,7 +210,7 @@ class Model {
             row: this.expansionIsland.row,
             beachNo: beachNo,
             slotNo: slotNo,
-            playerNo: this.currentPlayer
+            playerNo: this.currentPlayer,
         });
 
         // Finished expanding?
@@ -257,12 +277,27 @@ class Model {
             this.prepareToLand();
             this.broadcastChange(this.getValidMoves());
         } else {
-            // Reach sea tile and carry on
-            this.sailToNextHex(
-                this.landingTile.col,
-                this.landingTile.row,
-                this.landingTile.exits[(direction + 3) % 6]
-            );
+            // Die if not enough colours in fleet
+            console.log(this.sailingFleet, new Set(this.sailingFleet).size);
+            if (new Set(this.sailingFleet).size < this.landingTile.minCivs[(direction+3)%6]) {
+                for (let i = 0; i < this.sailingFleet.length; i++) {
+                    this.supplies[this.sailingFleet[i]] ++;
+                }
+                this.broadcastChange({
+                    type: ChangeType.SUPPLIES_CHANGED,
+                    supplies: this.supplies
+                });
+                this.sailingFleet = [];
+                this.prepareToSailIfAppropriate();
+                this.broadcastChange(this.getValidMoves());
+            } else {
+                // Reach sea tile and carry on
+                this.sailToNextHex(
+                    this.landingTile.col,
+                    this.landingTile.row,
+                    this.landingTile.exits[(direction + 3) % 6]
+                );
+            }
         }
     }
 

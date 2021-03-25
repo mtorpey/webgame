@@ -50,6 +50,16 @@ button.islandName {
     /*font: 100% Arial;*/
 }
 
+button.pathLabel {
+    position: absolute;
+    border-radius: 50%;
+    position: absolute;
+    background-color: white;
+    color: darkblue;
+    font-weight: bold;
+    border: none;
+}
+
 button.islandName:enabled {
     border-radius: 10%
 }
