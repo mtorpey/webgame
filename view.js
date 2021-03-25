@@ -1,6 +1,7 @@
 const COLOR_EMPTYSPACE = null;
 const COLOR_BACKGROUND = 'darkblue';
-const COLOR_GRID = 'dodgerblue';
+const COLOR_GRID = null;
+const COLOR_COAST = 'dodgerblue'
 const COLOR_SEA = 'dodgerblue';
 const COLOR_ISLAND = 'darkgreen';
 const COLOR_BEACH = 'wheat';
@@ -227,6 +228,9 @@ class View {
 
         let canvas = this.canvas;
         let context = this.context;
+        canvas.width = window.innerWidth * 0.97;
+        canvas.height = window.innerHeight * 0.85;
+
         context.fillStyle = COLOR_BACKGROUND;
         context.fillRect(0, 0, canvas.width, canvas.height);
 
@@ -262,7 +266,7 @@ class View {
 
     drawSeaTile(tile) {
         this.hexPositions.set({col: tile.col, row: tile.row});
-        this.drawHex(tile.col, tile.row, this.hexSide, COLOR_GRID, COLOR_SEA);
+        this.drawHex(tile.col, tile.row, this.hexSide, COLOR_COAST, COLOR_SEA);
         for (let side = 0; side < 6; side++) {
             this.drawPath(tile.col, tile.row, side, tile.exits[side]);
             if (tile.minCivs[side] > 0) {
@@ -322,7 +326,7 @@ class View {
 
     drawIsland(island) {
         this.hexPositions.set({col: island.col, row: island.row});
-        this.drawHex(island.col, island.row, this.hexSide, COLOR_GRID, COLOR_ISLAND);
+        this.drawHex(island.col, island.row, this.hexSide, COLOR_COAST, COLOR_ISLAND);
         //this.writeIslandLabel(island.name, island.value, island.col, island.row);
         this.createIslandNameButton(island.name, island.value, island.col, island.row);
         for (let beachNo = 0; beachNo < island.beaches.length; beachNo++) {
@@ -331,7 +335,7 @@ class View {
         }
 
         // Cover up those edges
-        this.drawGrid();
+        this.drawHex(island.col, island.row, this.hexSide, COLOR_COAST, null);
     }
 
     createIslandNameButton(name, value, col, row) {

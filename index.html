@@ -11,7 +11,7 @@
     <title>Tongiaki game</title>
   </head>
 
-  <body>
+  <body onresize="controller.view.rescaleToInclude(0, 0);">
     <div>
       <button onclick="controller.draw()">Draw!</button>
       <p id="turnView">Player's turn</p>
@@ -21,7 +21,7 @@
     <br>
 
     <div id="gameCanvasContainer">
-      <canvas id="gameCanvas" width="1280" height="720">
+      <canvas id="gameCanvas">
         This text is displayed if your browser does not support HTML5 Canvas.
       </canvas>
     </div>
