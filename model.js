@@ -716,7 +716,15 @@ class SeaTile extends Tile {
     }
 
     rotate(rotation) {
-        // TODO: rotate properly
+        console.log("rotating", rotation);
+        let newExits = [];
+        let newMinCivs = [];
+        for (let side = 0; side < 6; side++) {
+            newExits[side] = (this.exits[(side - rotation + 6) % 6] + rotation) % 6;
+            newMinCivs[side] = this.minCivs[(side - rotation + 6) % 6];
+        }
+        this.exits = newExits;
+        this.minCivs = newMinCivs;
     }
 
     nrShipsOnTile(playerNo = null) {
