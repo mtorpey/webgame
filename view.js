@@ -229,7 +229,7 @@ class View {
         let canvas = this.canvas;
         let context = this.context;
         canvas.width = window.innerWidth * 0.97;
-        canvas.height = window.innerHeight * 0.85;
+        canvas.height = window.innerHeight * 0.97;
 
         context.fillStyle = COLOR_BACKGROUND;
         context.fillRect(0, 0, canvas.width, canvas.height);

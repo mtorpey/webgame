@@ -12,18 +12,16 @@
   </head>
 
   <body onresize="controller.view.rescaleToInclude(0, 0);">
-    <div>
-      <button onclick="controller.draw()">Draw!</button>
-      <p id="turnView">Player's turn</p>
-      <p id="supplyView">Unknown ships in supply</p>
-    </div>
-
-    <br>
-
     <div id="gameCanvasContainer">
       <canvas id="gameCanvas">
         This text is displayed if your browser does not support HTML5 Canvas.
       </canvas>
+    </div>
+
+    <div id="extraControls">
+      <button onclick="controller.draw()">Draw!</button>
+      <p id="turnView">Player's turn</p>
+      <p id="supplyView">Unknown ships in supply</p>
     </div>
 
     <!-- <script src="/socket.io/socket.io.js"></script> -->
