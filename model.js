@@ -24,6 +24,10 @@ const MAX_SUPPLY = 15;
 class Model {
     tiles;
     tileSupply;
+    nrIslandsLeft;
+    nrSeaTilesLeft;
+
+    finalTurn;
 
     names;
     nrPlayers;
@@ -41,6 +45,10 @@ class Model {
     tileJustLeft;
     landingTile;
     landedOneOnEachBeach;
+
+    scores;
+    tilesOccupied;
+    winner;
 
     constructor(names) {
         // Setup players
@@ -72,7 +80,7 @@ class Model {
             new IslandTile("Fidschi", 5, [new Beach([5, 0], 4), new Beach([1, 2], 4), new Beach([4], 5)]),
             new IslandTile("Hawaii", 5, [new Beach([0], 5), new Beach([1, 2], 2), new Beach([4, 5], 3)]),
             new IslandTile("Hiva Oa", 4, [new Beach([0], 2), new Beach([1, 2], 5), new Beach([4, 5], 2)]),
-            new IslandTile("Mangareva", 4, [new Beach([0, 1], 3), new Beach([2], 4), new Beach([4, 5], 2)]),
+            /*new IslandTile("Mangareva", 4, [new Beach([0, 1], 3), new Beach([2], 4), new Beach([4, 5], 2)]),
             new IslandTile("Muroroa", 2, [new Beach([1, 2], 3), new Beach([4], 2), new Beach([5], 2)]),
             new IslandTile("Nauru", 2, [new Beach([0], 3), new Beach([1, 2], 2), new Beach([4, 5], 2)]),
             new IslandTile("Oahu", 4, [new Beach([0], 5), new Beach([1, 2], 3), new Beach([4, 5], 3)]),
@@ -97,16 +105,29 @@ class Model {
             new SeaTile([0, 4], 4, [1, 3], 0, [2, 5], 2),
             new SeaTile([0, 4], 4, [1, 3], 4, [2, 5], 3),
             new SeaTile([0, 5], 0, [1, 2], 2, [3, 4], 2),
-            new SeaTile([0, 5], 0, [1, 2], 2, [3, 4], 3),
+            new SeaTile([0, 5], 0, [1, 2], 2, [3, 4], 3),*/
             new SeaTile([0, 5], 2, [1, 2], 0, [3, 4], 0),
             new SeaTile([0, 5], 2, [1, 2], 4, [3, 4], 3)
         ];
         this.tileSupply = this.tileSupply.sort(() => Math.random() - 0.5);
+        this.nrIslandsLeft = this.tileSupply.filter(t => t.beaches).length;
+        this.nrSeaTilesLeft = this.tileSupply.filter(t => t.exits).length;
+        console.assert(this.nrIslandsLeft + this.nrSeaTilesLeft === this.tileSupply.length);
+
+        this.finalTurn = false;
     }
 
     placeTile(col, row, rotation, tile) {
         tile.place(col, row, rotation);
         this.tiles.push(tile);
+        if (tile.beaches) {
+            this.nrIslandsLeft --;
+        } else {
+            this.nrSeaTilesLeft --;
+        }
+        if (this.nrIslandsLeft === 0 || this.nrSeaTilesLeft === 0) {
+            this.finalTurn = true;
+        }
     }
 
     placeRandomTile(col, row, rotation) {
@@ -264,7 +285,16 @@ class Model {
         if (obj.beachExits.length == 0) {
             // Turn finished
             this.nextPlayer();
-            if (this.supplies[this.currentPlayer] === 0) {
+            if (this.finalTurn) {
+                this.turnPhase = TurnPhase.GAME_OVER;
+                this.computeFinalScores();
+                this.broadcastChange({
+                    type: ChangeType.GAME_OVER,
+                    finalScores: this.scores,
+                    finalTilesOccupied: this.tilesOccupied,
+                    winner: this.winner
+                });
+            } else if (this.supplies[this.currentPlayer] === 0) {
                 this.turnPhase = TurnPhase.RETRIEVE_ONE;
             } else {
                 this.turnPhase = TurnPhase.CHOOSING_EXPANSION_ISLAND;
@@ -299,14 +329,27 @@ class Model {
         // Fleet enters the neighbouring hex
         let fleetHex = hexNeighbor(col, row, direction);
         this.landingTile = this.getTile(fleetHex.col, fleetHex.row);
+
+        // New tile if available
         if (this.landingTile === null) {
-            this.placeRandomTile(fleetHex.col, fleetHex.row, direction);
-            this.landingTile = this.getTile(fleetHex.col, fleetHex.row);
-            console.assert(this.landingTile != null);
-            this.broadcastChange({
-                type: ChangeType.TILE_ADDED,
-                tile: this.landingTile
-            });
+            if (this.finalTurn) {
+                // No more tile draws allowed
+                this.killSailingFleet();
+                this.prepareToSailIfAppropriate();
+                this.broadcastChange(this.getValidMoves());
+                return;
+            } else {
+                // Draw another tile and sail there
+                this.placeRandomTile(fleetHex.col, fleetHex.row, direction);
+                this.landingTile = this.getTile(fleetHex.col, fleetHex.row);
+                console.assert(this.landingTile != null);
+                this.broadcastChange({
+                    type: ChangeType.TILE_ADDED,
+                    tile: this.landingTile,
+                    nrIslandsLeft: this.nrIslandsLeft,
+                    nrSeaTilesLeft: this.nrSeaTilesLeft
+                });
+            }
         }
 
         if (this.landingTile.beaches) {
@@ -318,14 +361,7 @@ class Model {
         } else {
             // Die if not enough colours in fleet
             if (new Set(this.sailingFleet).size < this.landingTile.minCivs[(direction+3)%6]) {
-                for (let i = 0; i < this.sailingFleet.length; i++) {
-                    this.supplies[this.sailingFleet[i]] ++;
-                }
-                this.broadcastChange({
-                    type: ChangeType.SUPPLIES_CHANGED,
-                    supplies: this.supplies
-                });
-                this.sailingFleet = [];
+                this.killSailingFleet();
                 this.prepareToSailIfAppropriate();
                 this.broadcastChange(this.getValidMoves());
             } else {
@@ -337,6 +373,17 @@ class Model {
                 );
             }
         }
+    }
+
+    killSailingFleet() {
+        for (let i = 0; i < this.sailingFleet.length; i++) {
+            this.supplies[this.sailingFleet[i]] ++;
+        }
+        this.broadcastChange({
+            type: ChangeType.SUPPLIES_CHANGED,
+            supplies: this.supplies
+        });
+        this.sailingFleet = [];
     }
 
     prepareToLand() {
@@ -389,6 +436,34 @@ class Model {
         this.broadcastChange(this.getValidMoves());
     }
 
+    computeFinalScores() {
+        console.assert(this.turnPhase === TurnPhase.GAME_OVER);
+        let scores = [];
+        let tilesOccupied = [];
+        let bestSoFar = 0;
+        for (let playerNo = 0; playerNo < this.nrPlayers; playerNo++) {
+            scores[playerNo] = 0;
+            tilesOccupied[playerNo] = 0;
+            for (let tile of this.tiles) {
+                let nrShips = tile.nrShipsOnTile(playerNo);
+                if (nrShips > 0) {
+                    console.assert(tile.value != undefined);
+                    scores[playerNo] += tile.value;
+                    tilesOccupied[playerNo] ++;
+                }
+            }
+            if ((scores[playerNo] > scores[bestSoFar])
+                || (scores[playerNo] == scores[bestSoFar]
+                    && tilesOccupied[playerNo] > tilesOccupied[bestSoFar])) {
+                bestSoFar = playerNo;
+                // TODO: handle ties on both (right now lowest player number wins)
+            }
+        }
+        this.scores = scores;
+        this.tilesOccupied = tilesOccupied;
+        this.winner = bestSoFar;
+    }
+
     getTile(col, row) {
         // Linear search - perhaps a map would be better, but there's only 32.
         for (let tile of this.tiles) {
@@ -410,6 +485,7 @@ class Model {
         case TurnPhase.EXPANDING: obj = this.getValidMovesExpanding(); break;
         case TurnPhase.READY_TO_SAIL: obj = this.getValidMovesReadyToSail(); break;
         case TurnPhase.LANDING: obj = this.getValidMovesLanding(); break;
+        case TurnPhase.GAME_OVER: obj = {}; break;  // no valid moves
         default: console.assert(false, "turn phase '" + this.turnPhase + "' cannot be handled");
         }
 
@@ -716,7 +792,6 @@ class SeaTile extends Tile {
     }
 
     rotate(rotation) {
-        console.log("rotating", rotation);
         let newExits = [];
         let newMinCivs = [];
         for (let side = 0; side < 6; side++) {

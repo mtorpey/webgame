@@ -42,10 +42,11 @@ class View {
         case ChangeType.SHIP_RETRIEVED: this.retrieveShip(obj.col, obj.row, obj.beachNo, obj.slotNo); break;
         case ChangeType.BEACH_EMPTIED: this.emptyBeach(obj.col, obj.row, obj.beachNo); break;
         case ChangeType.ISLAND_SELECTED: break;  // For now, do nothing.  Highlight maybe?
-        case ChangeType.TILE_ADDED: this.rescaleToInclude(obj.tile.col, obj.tile.row); this.drawTile(obj.tile); this.drawGrid(); break;
+        case ChangeType.TILE_ADDED: this.addTile(obj); break;
         case ChangeType.NEXT_PLAYER: this.turnView.innerHTML = "Player " + obj.currentPlayer + "'s turn"; break;  // TODO: track this properly
         case ChangeType.VALID_MOVES: this.presentValidMoves(obj); break;
         case ChangeType.SUPPLIES_CHANGED: this.presentSupplies(obj.supplies); break;
+        case ChangeType.GAME_OVER: this.gameOver(obj.winner, obj.finalScores, obj.finalTilesOccupied); break;
         default: console.assert(false, "change type '" + obj.type + "' cannot be handled");
         }
     }
@@ -72,6 +73,14 @@ class View {
 
     get supplyView() {
         return document.getElementById('supplyView');
+    }
+
+    get islandsLeftView() {
+        return document.getElementById('islandsLeftView');
+    }
+
+    get seaTilesLeftView() {
+        return document.getElementById('seaTilesLeftView');
     }
 
     rescaleToInclude(col, row) {
@@ -114,7 +123,7 @@ class View {
         this.left /= scale;
         this.hexSide /= scale;
 
-        controller.draw();
+        //controller.draw();
     }
 
     saveSlotButton(col, row, beachNo, slotNo, button) {
@@ -230,6 +239,8 @@ class View {
         let context = this.context;
         canvas.width = window.innerWidth * 0.97;
         canvas.height = window.innerHeight * 0.97;
+
+        this.rescaleToInclude(0, 0);
 
         context.fillStyle = COLOR_BACKGROUND;
         context.fillRect(0, 0, canvas.width, canvas.height);
@@ -593,6 +604,16 @@ class View {
         }
     }
 
+    addTile(obj) {
+        this.rescaleToInclude(obj.tile.col, obj.tile.row);
+        controller.draw();
+        this.drawTile(obj.tile);
+        this.drawGrid();
+
+        this.islandsLeftView.innerHTML = obj.nrIslandsLeft + " islands left";
+        this.seaTilesLeftView.innerHTML = obj.nrSeaTilesLeft + " sea tiles left";
+    }
+
     /**
      * Configure buttons to allow only the given moves.
      */
@@ -653,6 +674,12 @@ class View {
 
     presentSupplies(supplies) {
         this.supplyView.innerHTML = "Ships in supply: " + supplies;
+    }
+
+    gameOver(winner, finalScores, finalTilesOccupied) {
+        this.turnView.innerHTML = "Game over!";
+        this.turnView.innerHTML += "<br>Final scores: " + finalScores;
+        this.turnView.innerHTML += "<br>Player " + winner + " wins!";
     }
 
     drawHex(col, row, side, strokeColor, fillColor) {
