@@ -43,7 +43,7 @@ class View {
         case ChangeType.BEACH_EMPTIED: this.emptyBeach(obj.col, obj.row, obj.beachNo); break;
         case ChangeType.ISLAND_SELECTED: break;  // For now, do nothing.  Highlight maybe?
         case ChangeType.TILE_ADDED: this.addTile(obj); break;
-        case ChangeType.NEXT_PLAYER: this.turnView.innerHTML = "Player " + obj.currentPlayer + "'s turn"; break;  // TODO: track this properly
+        case ChangeType.NEXT_PLAYER: this.presentCurrentPlayer(obj.currentPlayer); break;
         case ChangeType.VALID_MOVES: this.presentValidMoves(obj); break;
         case ChangeType.SUPPLIES_CHANGED: this.presentSupplies(obj.supplies); break;
         case ChangeType.GAME_OVER: this.gameOver(obj.winner, obj.finalScores, obj.finalTilesOccupied); break;
@@ -252,6 +252,13 @@ class View {
         this.drawGrid();
 
         this.presentValidMoves();
+        this.presentCurrentPlayer(model.currentPlayer);
+        this.presentSupplies(model.supplies);
+        this.presentTilesLeft(model.nrIslandsLeft, model.nrSeaTilesLeft);
+
+        if (model.winner != null) {
+            this.gameOver(model.winner, model.scores, model.finalTilesOccupied);
+        }
     }
 
     drawGrid() {
@@ -610,8 +617,7 @@ class View {
         this.drawTile(obj.tile);
         this.drawGrid();
 
-        this.islandsLeftView.innerHTML = obj.nrIslandsLeft + " islands left";
-        this.seaTilesLeftView.innerHTML = obj.nrSeaTilesLeft + " sea tiles left";
+        this.presentTilesLeft(obj.nrIslandsLeft, obj.nrSeaTilesLeft);
     }
 
     /**
@@ -674,6 +680,15 @@ class View {
 
     presentSupplies(supplies) {
         this.supplyView.innerHTML = "Ships in supply: " + supplies;
+    }
+
+    presentCurrentPlayer(currentPlayer) {
+        this.turnView.innerHTML = "Player " + currentPlayer + "'s turn";
+    }
+
+    presentTilesLeft(nrIslandsLeft, nrSeaTilesLeft) {
+        this.islandsLeftView.innerHTML = nrIslandsLeft + " islands left";
+        this.seaTilesLeftView.innerHTML = nrSeaTilesLeft + " sea tiles left";
     }
 
     gameOver(winner, finalScores, finalTilesOccupied) {
