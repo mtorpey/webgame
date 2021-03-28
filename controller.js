@@ -40,6 +40,10 @@ class Controller {
     islandNameButtonClicked(button) {
         this.model.chooseExpansionIsland(button.col, button.row);
         button.blur();
+    }o
+
+    royalIslandButtonClicked(button) {
+        this.model.claimAsRoyalIsland(button.col, button.row);
     }
 
     landingShipButtonClicked(button) {

@@ -80,7 +80,7 @@ class Model {
             new IslandTile("Fidschi", 5, [new Beach([5, 0], 4), new Beach([1, 2], 4), new Beach([4], 5)]),
             new IslandTile("Hawaii", 5, [new Beach([0], 5), new Beach([1, 2], 2), new Beach([4, 5], 3)]),
             new IslandTile("Hiva Oa", 4, [new Beach([0], 2), new Beach([1, 2], 5), new Beach([4, 5], 2)]),
-            /*new IslandTile("Mangareva", 4, [new Beach([0, 1], 3), new Beach([2], 4), new Beach([4, 5], 2)]),
+            new IslandTile("Mangareva", 4, [new Beach([0, 1], 3), new Beach([2], 4), new Beach([4, 5], 2)]),
             new IslandTile("Muroroa", 2, [new Beach([1, 2], 3), new Beach([4], 2), new Beach([5], 2)]),
             new IslandTile("Nauru", 2, [new Beach([0], 3), new Beach([1, 2], 2), new Beach([4, 5], 2)]),
             new IslandTile("Oahu", 4, [new Beach([0], 5), new Beach([1, 2], 3), new Beach([4, 5], 3)]),
@@ -105,7 +105,7 @@ class Model {
             new SeaTile([0, 4], 4, [1, 3], 0, [2, 5], 2),
             new SeaTile([0, 4], 4, [1, 3], 4, [2, 5], 3),
             new SeaTile([0, 5], 0, [1, 2], 2, [3, 4], 2),
-            new SeaTile([0, 5], 0, [1, 2], 2, [3, 4], 3),*/
+            new SeaTile([0, 5], 0, [1, 2], 2, [3, 4], 3),
             new SeaTile([0, 5], 2, [1, 2], 0, [3, 4], 0),
             new SeaTile([0, 5], 2, [1, 2], 4, [3, 4], 3)
         ];
@@ -210,7 +210,7 @@ class Model {
         let island = this.getTile(col, row);
         let beaches = island.beaches;
         console.assert(island.nrShipsOnTile(this.currentPlayer) > 0
-                       || this.supplies[this.currentPlayer] === MAX_SUPPLY);
+                       || !this.hasShipsOnBoard(this.currentPlayer));
         console.assert(island.hasEmptyBeachSlots());
 
         // Set it as the island for expansion this turn
@@ -218,7 +218,7 @@ class Model {
         this.beachesAvailableForExpansion = beaches.map(b => b.hasEmptyBeachSlots());
 
         // Record number of ships to be added
-        if (this.supplies[this.currentPlayer] === MAX_SUPPLY) {
+        if (!this.hasShipsOnBoard(this.currentPlayer)) {
             // Nothing on the board, so add 2 to Tonga or 1 anywhere else
             this.shipsToAddInExpansion = (island === this.tonga ? 2 : 1);
         } else {
@@ -240,6 +240,38 @@ class Model {
         this.turnPhase = TurnPhase.EXPANDING;
 
         // Broadcast valid moves
+        this.broadcastChange(this.getValidMoves());
+    }
+
+    claimAsRoyalIsland(col, row) {
+        let island = this.getTile(col, row);
+        console.assert(island.beaches);
+        console.assert(island.canClaimAsRoyalIsland(this.currentPlayer));
+        // TODO: max 2 royal islands per player
+        let ships = island.claimAsRoyalIsland(this.currentPlayer);
+        this.broadcastChange({
+            type: ChangeType.ROYAL_ISLAND_CLAIMED,
+            col: col,
+            row: row,
+            playerNo: this.currentPlayer
+        });
+
+        this.supplies[this.currentPlayer] += ships;
+        this.broadcastChange({
+            type: ChangeType.SUPPLIES_CHANGED,
+            supplies: this.supplies
+        });
+
+        for (let beach of island.beaches) {
+            this.broadcastChange({
+                type: ChangeType.BEACH_EMPTIED,
+                col: col,
+                row: row,
+                beachNo: beach.beachNo
+            });
+        }
+        
+        this.prepareToSailIfAppropriate();  // Will start next turn
         this.broadcastChange(this.getValidMoves());
     }
 
@@ -321,11 +353,12 @@ class Model {
             beachNo: beach.beachNo
         });
 
+        this.tileJustLeft = this.getTile(col, row);
+
         this.sailToNextHex(col, row, direction);
     }
 
     sailToNextHex(col, row, direction) {
-        this.tileJustLeft = this.getTile(col, row);
         // Fleet enters the neighbouring hex
         let fleetHex = hexNeighbor(col, row, direction);
         this.landingTile = this.getTile(fleetHex.col, fleetHex.row);
@@ -392,7 +425,7 @@ class Model {
             this.setValidLandingBeaches();
             this.landedOneOnEachBeach = true;
         }
-        if (!this.landingTile.hasEmptyBeachSlots()) {
+        if (!this.landingTile.hasEmptyBeachSlots() || this.landingTile.isRoyalIsland()) {
             // Bounce back
             let t = this.tileJustLeft;
             this.tileJustLeft = this.landingTile;
@@ -472,6 +505,16 @@ class Model {
             }
         }
         return null;
+    }
+
+    hasShipsOnBoard(playerNo) {
+        let nrRoyalIslands = 0;
+        for (let tile of this.tiles) {
+            if (tile.royalOwner === playerNo) {
+                nrRoyalIslands++;
+            }
+        }
+        return (this.supplies[playerNo] + nrRoyalIslands < MAX_SUPPLY);
     }
 
     getValidMoves() {
@@ -557,20 +600,20 @@ class Model {
      * - the "special" option to remove all ships and get a new island.
      */
     getValidMovesChoosingExpansionIsland() {
-        // If zero ships of this colour on the board, then can add anywhere
-        let nothingOnBoard = (this.supplies[this.currentPlayer] === MAX_SUPPLY);
-        
-        // TODO: special case for empty stock
+        // Note: if zero ships of this colour on the board, then can add anywhere
         let expandableIslands = [];
         for (let tile of this.tiles) {
             if ((tile.nrShipsOnTile(this.currentPlayer) >= 1
                  && tile.hasEmptyBeachSlots())
-                || (nothingOnBoard && tile.beaches)) {
+                || (!this.hasShipsOnBoard(this.currentPlayer) && tile.beaches)) {
                 expandableIslands.push({col: tile.col, row: tile.row});
             }
         }
 
-        return {expandableIslands: expandableIslands};
+        return {
+            expandableIslands: expandableIslands,
+            claimableIslands: this.tiles.filter(t => t.canClaimAsRoyalIsland(this.currentPlayer))
+        };
     }
 
     /**
@@ -689,12 +732,17 @@ class Tile {
     nrShipsOnTile(playerNo = null) {
         throw new Error("This should be overridden!");
     }
+
+    canClaimAsRoyalIsland(playerNo) {
+        throw new Error("This should be overridden!");
+    }
 }
 
 class IslandTile extends Tile {
     name;
     value;
     beaches;
+    royalOwner;
 
     /**
      * Creates an island tile, but doesn't place it.
@@ -716,6 +764,8 @@ class IslandTile extends Tile {
             beach.beachNo = i;
             i++;
         }
+
+        this.royalOwner = null;
     }
 
     rotate(rotation) {
@@ -756,6 +806,54 @@ class IslandTile extends Tile {
             }
         }
         return null;
+    }
+
+    canClaimAsRoyalIsland(playerNo) {
+        if (this.isRoyalIsland() || this.value === 0) {
+            return false;
+        }
+        let present = false;
+        for (let beach of this.beaches) {
+            for (let slotNo = 0; slotNo < beach.capacity; slotNo++) {
+                if (beach.ships[slotNo] === playerNo) {
+                    // Player has at least one ship here
+                    present = true;
+                } else if (beach.ships[slotNo] != null) {
+                    // Another player is here
+                    return false;
+                }
+            }
+        }
+        return present;
+    }
+
+    isRoyalIsland() {
+        if (this.royalOwner === null) {
+            return false;
+        } else {
+            return true;
+        }
+    }
+
+    /** Mark as royal island and return number of ships to return to supply */
+    claimAsRoyalIsland(playerNo) {
+        console.assert(this.canClaimAsRoyalIsland(playerNo));
+        this.royalOwner = playerNo;
+
+        let nrShips = 0;
+        for (let beach of this.beaches) {
+            for (let slotNo = 0; slotNo < beach.capacity; slotNo++) {
+                if (beach.ships[slotNo] === playerNo) {
+                    beach.ships[slotNo] = null;
+                    nrShips++;
+                } else {
+                    console.assert(beach.ships[slotNo] === null);
+                }
+            }
+        }
+
+        // Return all ships but one to supply
+        return nrShips - 1;
     }
 }
 
@@ -804,6 +902,10 @@ class SeaTile extends Tile {
 
     nrShipsOnTile(playerNo = null) {
         return 0;
+    }
+
+    canClaimAsRoyalIsland(playerNo) {
+        return false;
     }
 }
 

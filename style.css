@@ -88,6 +88,22 @@ button.islandName:disabled {
     border: none;
 }
 
+button.royalIsland {
+    position: absolute;
+    border-radius: 20%;
+}
+
+button.royalIsland:disabled {
+    opacity: 0.0;
+    z-index: -1;
+}
+
+button.claimedRoyalIsland {
+    position: absolute;
+    border-radius: 50%;
+    border: gold 4px solid;
+}
+
 button.sailButton {
     position: absolute;
     /*font: 20px Arial;*/

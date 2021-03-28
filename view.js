@@ -26,6 +26,7 @@ class View {
     slotButtons = new Map();
     slotGroups = new Map();
     islandNameButtons = new Map();
+    royalIslandButtons = new Map();
     sailButtons = new Map();
     pathLabels = new Map();
 
@@ -43,6 +44,7 @@ class View {
         case ChangeType.BEACH_EMPTIED: this.emptyBeach(obj.col, obj.row, obj.beachNo); break;
         case ChangeType.ISLAND_SELECTED: break;  // For now, do nothing.  Highlight maybe?
         case ChangeType.TILE_ADDED: this.addTile(obj); break;
+        case ChangeType.ROYAL_ISLAND_CLAIMED: this.claimAsRoyalIsland(obj.col, obj.row, obj.playerNo); break;
         case ChangeType.NEXT_PLAYER: this.presentCurrentPlayer(obj.currentPlayer); break;
         case ChangeType.VALID_MOVES: this.presentValidMoves(obj); break;
         case ChangeType.SUPPLIES_CHANGED: this.presentSupplies(obj.supplies); break;
@@ -166,6 +168,18 @@ class View {
         this.islandNameButtons.forEach(f);
     }
 
+    saveRoyalIslandButton(col, row, button) {
+        this.royalIslandButtons.set(col + "," + row, button);
+    }
+
+    getRoyalIslandButton(col, row) {
+        return this.royalIslandButtons.get(col + "," + row);
+    }
+
+    applyRoyalIslandButtons(f) {
+        this.royalIslandButtons.forEach(f);
+    }
+
     saveSailButton(col, row, exitDirection, button) {
         this.sailButtons.set(col + "," + row + "," + exitDirection, button);
     }
@@ -179,6 +193,7 @@ class View {
     }
 
     deleteAllButtons() {
+        // TODO: remove this?  Never used?
         this.applySlotButtons(b => b.parentNode.removeChild(b));
         this.slotButtons = null;
         for (let group of document.getElementsByClassName("beachGroup")) {
@@ -345,11 +360,16 @@ class View {
     drawIsland(island) {
         this.hexPositions.set({col: island.col, row: island.row});
         this.drawHex(island.col, island.row, this.hexSide, COLOR_COAST, COLOR_ISLAND);
-        //this.writeIslandLabel(island.name, island.value, island.col, island.row);
         this.createIslandNameButton(island.name, island.value, island.col, island.row);
+        this.createRoyalIslandButton(island.col, island.row);
         for (let beachNo = 0; beachNo < island.beaches.length; beachNo++) {
             let beach = island.beaches[beachNo];
             this.drawBeach(island.col, island.row, beachNo, beach);
+        }
+
+        console.log(island.name, island.royalOwner);
+        if (island.royalOwner != null) {
+            this.claimAsRoyalIsland(island.col, island.row, island.royalOwner);
         }
 
         // Cover up those edges
@@ -377,6 +397,35 @@ class View {
         button.style.height = buttonHeight + "px";
         button.disabled = true;
         button.innerHTML = name + (value > 0 ? "<br>" + value : "");
+        button.style.fontSize = this.hexSide * 0.17 + "px";
+        button.style.top = y + "px";
+        button.style.left = x + "px";
+
+        button.col = col;
+        button.row = row;
+    }
+
+    createRoyalIslandButton(col, row) {
+        let center = this.hexCenter(col, row);
+
+        let buttonHeight = this.hexSide * 0.3;
+        let buttonWidth = this.hexSide * 0.3;
+
+        let x = center.x - buttonWidth / 2;
+        let y = center.y - buttonHeight / 2 - this.hexSide / 3;
+
+        let button = this.getRoyalIslandButton(col, row);
+        if (!button) {
+            button = document.createElement("button");
+            this.saveRoyalIslandButton(col, row, button);
+            button.addEventListener("click", (e) => controller.royalIslandButtonClicked(e.target));
+            this.canvasContainer.appendChild(button);
+        }
+        button.classList = "royalIsland";
+        button.style.width = buttonWidth + "px";
+        button.style.height = buttonHeight + "px";
+        button.disabled = true;
+        button.innerHTML = "R";
         button.style.fontSize = this.hexSide * 0.17 + "px";
         button.style.top = y + "px";
         button.style.left = x + "px";
@@ -620,6 +669,27 @@ class View {
         this.presentTilesLeft(obj.nrIslandsLeft, obj.nrSeaTilesLeft);
     }
 
+    claimAsRoyalIsland(col, row, playerNo) {
+        let button = this.getRoyalIslandButton(col, row);
+        button.classList = ["claimedRoyalIsland"];
+        button.style.backgroundColor = COLOR_PLAYER[playerNo];
+
+        let center = this.hexCenter(col, row);
+        let buttonHeight = this.hexSide / 5;
+        let buttonWidth = this.hexSide / 2.5;
+        let x = center.x - buttonWidth / 2;
+        let y = center.y - buttonHeight / 2 - this.hexSide * 0.35;
+
+        button.style.width = buttonWidth + "px";
+        button.style.height = buttonHeight + "px";
+
+        button.innerHTML = "";
+        button.style.top = y + "px";
+        button.style.left = x + "px";
+
+        button.disabled = true;
+    }
+
     /**
      * Configure buttons to allow only the given moves.
      */
@@ -635,6 +705,7 @@ class View {
             b.ondrop = null;
         });
         this.applyIslandNameButtons((b) => {b.disabled = true;});
+        this.applyRoyalIslandButtons((b) => {b.disabled = true;});
         this.applySailButtons((b) => {b.disabled = true;});
         this.deleteLandingSlotGroup();
 
@@ -675,6 +746,15 @@ class View {
         // Ships landing at island
         if (obj.landingShips) {
             this.createLandingSlotGroup(obj.landingCol, obj.landingRow, obj.landingShips);
+        }
+
+        // CLaiming as royal island
+        if (obj.claimableIslands) {
+            for (let island of obj.claimableIslands) {
+                console.log("can claim", island.name);
+                let button = this.getRoyalIslandButton(island.col, island.row);
+                button.disabled = false;
+            }
         }
     }
 
