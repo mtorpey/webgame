@@ -14,9 +14,11 @@ const ChangeType = {
     BEACH_EMPTIED: "beach emptied",
     ISLAND_SELECTED: "island selected",  // for expansion
     TILE_ADDED: "tile added",
+    ROYAL_ISLAND_CLAIMED: "royal island claimed",
     SUPPLIES_CHANGED: "supplies changed",
     NEXT_PLAYER: "next player",
-    VALID_MOVES: "valid moves"
+    VALID_MOVES: "valid moves",
+    GAME_OVER: "game over"
 }
 
 const MAX_SUPPLY = 15;
@@ -247,7 +249,7 @@ class Model {
         let island = this.getTile(col, row);
         console.assert(island.beaches);
         console.assert(island.canClaimAsRoyalIsland(this.currentPlayer));
-        // TODO: max 2 royal islands per player
+        console.assert(this.nrRoyalIslands(this.currentPlayer) < 2);
         let ships = island.claimAsRoyalIsland(this.currentPlayer);
         this.broadcastChange({
             type: ChangeType.ROYAL_ISLAND_CLAIMED,
@@ -282,7 +284,6 @@ class Model {
         console.assert(this.supplies[this.currentPlayer] > 0);
 
         // Add a ship here
-        // TODO: player supplies
         this.expansionIsland.addShip(beachNo, slotNo, this.currentPlayer);
         this.supplies[this.currentPlayer] --;
         this.broadcastChange({
@@ -507,14 +508,18 @@ class Model {
         return null;
     }
 
-    hasShipsOnBoard(playerNo) {
+    nrRoyalIslands(playerNo) {
         let nrRoyalIslands = 0;
         for (let tile of this.tiles) {
             if (tile.royalOwner === playerNo) {
                 nrRoyalIslands++;
             }
         }
-        return (this.supplies[playerNo] + nrRoyalIslands < MAX_SUPPLY);
+        return nrRoyalIslands;
+    }
+
+    hasShipsOnBoard(playerNo) {
+        return this.supplies[playerNo] + this.nrRoyalIslands(playerNo) < MAX_SUPPLY;
     }
 
     getValidMoves() {
@@ -569,13 +574,9 @@ class Model {
     getValidMovesRetrieveOne() {
         let validSlots = [];
         for (let tile of this.tiles) {
-            console.log("considering tile", tile);
             if (tile.beaches) {
-                console.log("beaches here!");
                 for (let beach of tile.beaches) {
-                    console.log("considering beach", beach);
                     for (let i = 0; i < beach.capacity; i++) {
-                        console.log("considering slot with", beach.ships[i]);
                         if (beach.ships[i] === this.currentPlayer) {
                             validSlots.push({
                                 col: tile.col,
@@ -610,9 +611,16 @@ class Model {
             }
         }
 
+        let claimableIslands;
+        if (this.nrRoyalIslands(this.currentPlayer) < 2) {
+            claimableIslands = this.tiles.filter(t => t.canClaimAsRoyalIsland(this.currentPlayer));
+        } else {
+            claimableIslands = [];
+        }
+
         return {
             expandableIslands: expandableIslands,
-            claimableIslands: this.tiles.filter(t => t.canClaimAsRoyalIsland(this.currentPlayer))
+            claimableIslands: claimableIslands
         };
     }
 

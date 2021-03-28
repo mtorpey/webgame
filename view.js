@@ -45,9 +45,9 @@ class View {
         case ChangeType.ISLAND_SELECTED: break;  // For now, do nothing.  Highlight maybe?
         case ChangeType.TILE_ADDED: this.addTile(obj); break;
         case ChangeType.ROYAL_ISLAND_CLAIMED: this.claimAsRoyalIsland(obj.col, obj.row, obj.playerNo); break;
+        case ChangeType.SUPPLIES_CHANGED: this.presentSupplies(obj.supplies); break;
         case ChangeType.NEXT_PLAYER: this.presentCurrentPlayer(obj.currentPlayer); break;
         case ChangeType.VALID_MOVES: this.presentValidMoves(obj); break;
-        case ChangeType.SUPPLIES_CHANGED: this.presentSupplies(obj.supplies); break;
         case ChangeType.GAME_OVER: this.gameOver(obj.winner, obj.finalScores, obj.finalTilesOccupied); break;
         default: console.assert(false, "change type '" + obj.type + "' cannot be handled");
         }
@@ -367,7 +367,6 @@ class View {
             this.drawBeach(island.col, island.row, beachNo, beach);
         }
 
-        console.log(island.name, island.royalOwner);
         if (island.royalOwner != null) {
             this.claimAsRoyalIsland(island.col, island.row, island.royalOwner);
         }
@@ -751,7 +750,6 @@ class View {
         // CLaiming as royal island
         if (obj.claimableIslands) {
             for (let island of obj.claimableIslands) {
-                console.log("can claim", island.name);
                 let button = this.getRoyalIslandButton(island.col, island.row);
                 button.disabled = false;
             }
