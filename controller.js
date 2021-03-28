@@ -1,3 +1,5 @@
+"use strict";
+
 class Controller {
     model;
     view;

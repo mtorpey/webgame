@@ -1,3 +1,5 @@
+"use strict";
+
 const TurnPhase = {
     INITIAL_PLACEMENT: "initial placement",  // place 2 ships each on Tonga
     RETRIEVE_ONE: "retrieve one",  // empty supply, so grab one ship before expansion
@@ -474,27 +476,34 @@ class Model {
         console.assert(this.turnPhase === TurnPhase.GAME_OVER);
         let scores = [];
         let tilesOccupied = [];
+        let nrShips = [];
         let bestSoFar = 0;
         for (let playerNo = 0; playerNo < this.nrPlayers; playerNo++) {
             scores[playerNo] = 0;
             tilesOccupied[playerNo] = 0;
+            nrShips[playerNo] = [];
             for (let tile of this.tiles) {
-                let nrShips = tile.nrShipsOnTile(playerNo);
-                if (nrShips > 0) {
+                let s = tile.nrShipsOnTile(playerNo);
+                if (s > 0) {
                     console.assert(tile.value != undefined);
                     scores[playerNo] += tile.value;
                     tilesOccupied[playerNo] ++;
+                    nrShips[playerNo] += s;
                 }
             }
             if ((scores[playerNo] > scores[bestSoFar])
                 || (scores[playerNo] == scores[bestSoFar]
-                    && tilesOccupied[playerNo] > tilesOccupied[bestSoFar])) {
+                    && tilesOccupied[playerNo] > tilesOccupied[bestSoFar])
+                || (scores[playerNo] == scores[bestSoFar]
+                    && tilesOccupied[playerNo] == tilesOccupied[bestSoFar]
+                    && nrShips[playerNo] < nrShips[bestSoFar])) {
                 bestSoFar = playerNo;
-                // TODO: handle ties on both (right now lowest player number wins)
+                // TODO: handle further ties? (right now lowest player number wins)
             }
         }
         this.scores = scores;
         this.tilesOccupied = tilesOccupied;
+        this.nrShips = nrShips;
         this.winner = bestSoFar;
     }
 

@@ -1,3 +1,5 @@
+"use strict";
+
 const COLOR_EMPTYSPACE = null;
 const COLOR_BACKGROUND = 'darkblue';
 const COLOR_GRID = null;
