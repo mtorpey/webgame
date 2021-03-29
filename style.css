@@ -5,20 +5,48 @@ html, body {
     background-color: darkblue;
     color: white;
     font: large sans-serif;
+    text-align: center;
 }
 
 #extraControls {
-    position: absolute;
+    /*position: absolute;*/
+    width: 100%;
     z-index: 1;
 }
 
+.turnBox {
+    border-radius: 25%;
+    width: 30pt;
+    color: white;
+    font-size: xx-large;
+}
+.currentPlayer {
+    color: white;
+}
+#hint {
+    font-size: xx-large;
+    background-color: darkblue;
+    color: gold;
+    width: 50%;
+}
+#supplyView {
+    background-color: lightpink;
+    width: 25%;
+}
+#islandsLeftView {
+    background-color: darkgreen;
+}
+#seaTilesLeftView {
+    background-color: navy;
+}
+
 #gameCanvasContainer{
-    position: relative;
+    position: absolute;
 }
 
 #gameCanvas {
     position: absolute;
-    border: none;
+    border: none; /*1px solid red;*/
 }
 
 #gameCanvasContainer>div.beachGroup {

@@ -12,10 +12,18 @@ const COLOR_PLAYER = [
     'limegreen',
     'red',
     'yellow',
-    'purple',
+    'mediumorchid',
     'orange',
-    'blue'
+    'dodgerblue'
 ];
+const COLOR_PLAYER_CONTRAST = [
+    'darkblue',
+    'white',
+    'darkblue',
+    'white',
+    'white',
+    'white'
+]
 
 class View {
 
@@ -31,6 +39,8 @@ class View {
     royalIslandButtons = new Map();
     sailButtons = new Map();
     pathLabels = new Map();
+
+    turnBox;
 
     validMoves = {};
 
@@ -75,6 +85,10 @@ class View {
         return document.getElementById('turnView');
     }
 
+    get turnViewRow() {
+        return document.getElementById('turnViewRow');
+    }
+
     get supplyView() {
         return document.getElementById('supplyView');
     }
@@ -103,10 +117,11 @@ class View {
             right = Math.max(right, this.hexPoint(hex.col, hex.row, 2).x);
         }
 
-        top -= this.hexSide / 2;
-        bottom += this.hexSide / 2;
-        left -= this.hexSide / 2;
-        right += this.hexSide / 2;
+        // Margins
+        top -= this.hexSide / 4;
+        bottom += this.hexSide / 4;
+        left -= this.hexSide / 4;
+        right += this.hexSide / 4;
 
         center = {x: (right + left) / 2, y: (bottom + top) / 2};
 
@@ -254,8 +269,8 @@ class View {
 
         let canvas = this.canvas;
         let context = this.context;
-        canvas.width = window.innerWidth * 0.97;
-        canvas.height = window.innerHeight * 0.97;
+        canvas.width = window.innerWidth * 0.98;
+        canvas.height = window.innerHeight * 0.9;
 
         this.rescaleToInclude(0, 0);
 
@@ -269,7 +284,7 @@ class View {
         this.drawGrid();
 
         this.presentValidMoves();
-        this.presentCurrentPlayer(model.currentPlayer);
+        this.presentCurrentPlayer(model.currentPlayer, model.nrPlayers);
         this.presentSupplies(model.supplies);
         this.presentTilesLeft(model.nrIslandsLeft, model.nrSeaTilesLeft);
 
@@ -762,8 +777,27 @@ class View {
         this.supplyView.innerHTML = "Ships in supply: " + supplies;
     }
 
-    presentCurrentPlayer(currentPlayer) {
-        this.turnView.innerHTML = "Player " + currentPlayer + "'s turn";
+    presentCurrentPlayer(currentPlayer, nrPlayers) {
+        // Create boxes
+        if (nrPlayers != undefined && !this.turnBox) {
+            this.turnBox = [];
+            for (let playerNo = 0; playerNo < nrPlayers; playerNo++) {
+                this.turnBox[playerNo] = document.createElement("td");
+                this.turnBox[playerNo].classList = ["turnBox"];
+                this.turnBox[playerNo].innerHTML = "" + playerNo;
+                this.turnViewRow.appendChild(this.turnBox[playerNo]);
+            }
+        }
+        // Reset colours
+        for (let playerNo = 0; playerNo < this.turnBox.length; playerNo++) {
+            this.turnBox[playerNo].style.color = COLOR_PLAYER[playerNo];
+            this.turnBox[playerNo].style.backgroundColor = null;
+            this.turnBox[playerNo].classList.remove("currentPlayer");
+        }
+        // Highlight current player
+        this.turnBox[currentPlayer].style.backgroundColor = COLOR_PLAYER[currentPlayer];
+        this.turnBox[currentPlayer].style.color = COLOR_PLAYER_CONTRAST[currentPlayer];
+        this.turnBox[currentPlayer].classList.add("currentPlayer");
     }
 
     presentTilesLeft(nrIslandsLeft, nrSeaTilesLeft) {

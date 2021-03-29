@@ -12,18 +12,31 @@
   </head>
 
   <body onresize="controller.draw();">
+    <table id="extraControls">
+      <tr>
+        <td id="turnView" rowspan="2">
+          <table id="turnViewTable">
+            <tr id="turnViewRow">
+              <td>Players:</td>
+            </tr>
+          </table>
+        </td>
+        <td id="hint" rowspan="2">Pick an island.</td>
+        <td id="supplyView" colspan="2">Unknown ships in supply</td>
+        <td>
+          <button onclick="controller.draw()">Redraw</button>
+        </td>
+      </tr>
+      <tr>
+        <td id="islandsLeftView">Unknown islands left</td>
+        <td id="seaTilesLeftView">Unknown sea tiles left</td>
+      </tr>
+    </table>
+
     <div id="gameCanvasContainer">
       <canvas id="gameCanvas">
         This text is displayed if your browser does not support HTML5 Canvas.
       </canvas>
-    </div>
-
-    <div id="extraControls">
-      <button onclick="controller.draw()">Redraw</button>
-      <p id="turnView">Player's turn</p>
-      <p id="supplyView">Unknown ships in supply</p>
-      <p id="islandsLeftView">Unknown islands left</p>
-      <p id="seaTilesLeftView">Unknown sea tiles left</p>
     </div>
 
     <!-- <script src="/socket.io/socket.io.js"></script> -->
