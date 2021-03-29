@@ -58,7 +58,7 @@ class Model {
         // Setup players
         this.names = names;
         this.nrPlayers = names.length;
-        console.assert(this.nrPlayers in [2,3,4,5,6]);
+        console.assert([2,3,4,5,6].includes(this.nrPlayers));
         this.supplies = [];
         for (let p = 0; p < this.nrPlayers; p++) {
             this.supplies[p] = MAX_SUPPLY;
