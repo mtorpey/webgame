@@ -12,9 +12,13 @@ html, body {
     /*position: absolute;*/
     width: 100%;
     z-index: 1;
+    border-spacing: 5px;
 }
 
-.turnBox {
+.supplyViewTable {
+    border-spacing: 10px 0px;
+}
+.playerBox {
     border-radius: 25%;
     width: 30pt;
     color: white;
@@ -30,14 +34,19 @@ html, body {
     width: 50%;
 }
 #supplyView {
-    background-color: lightpink;
-    width: 25%;
+    width: 15%;
 }
 #islandsLeftView {
     background-color: darkgreen;
+    border-radius: 10pt;
+    width: 5%;
+    font-size: xx-large;
 }
 #seaTilesLeftView {
-    background-color: navy;
+    background-color: dodgerblue;
+    border-radius: 10pt;
+    width: 5%;
+    font-size: xx-large;
 }
 
 #gameCanvasContainer{

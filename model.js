@@ -548,6 +548,7 @@ class Model {
 
         // Mark this as a "valid moves" object for sending to the view
         obj.type = ChangeType.VALID_MOVES;
+        obj.turnPhase = this.turnPhase;
         return obj;
     }
 

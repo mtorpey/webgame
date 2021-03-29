@@ -41,6 +41,7 @@ class View {
     pathLabels = new Map();
 
     turnBox;
+    suppliesBox;
 
     validMoves = {};
 
@@ -89,8 +90,16 @@ class View {
         return document.getElementById('turnViewRow');
     }
 
+    get hintView() {
+        return document.getElementById('hint');
+    }
+
     get supplyView() {
         return document.getElementById('supplyView');
+    }
+
+    get supplyViewRow() {
+        return document.getElementById('supplyViewRow');
     }
 
     get islandsLeftView() {
@@ -282,6 +291,8 @@ class View {
         }
 
         this.drawGrid();
+
+        this.validMoves.turnPhase = model.turnPhase;
 
         this.presentValidMoves();
         this.presentCurrentPlayer(model.currentPlayer, model.nrPlayers);
@@ -712,6 +723,9 @@ class View {
     presentValidMoves(obj = this.validMoves) {
         this.validMoves = obj;
 
+        // Show the message
+        this.presentHint(this.getHintFromTurnPhase(obj.turnPhase));
+
         // Disable all beach slot buttons
         this.applySlotButtons((b) => {
             b.disabled = true;
@@ -773,8 +787,38 @@ class View {
         }
     }
 
+    presentHint(string) {
+        this.hintView.innerHTML = string;
+    }
+
+    getHintFromTurnPhase(turnPhase) {
+        switch(turnPhase) {
+        case TurnPhase.INITIAL_PLACEMENT: return "Choose a beach to add a ship";
+        case TurnPhase.RETRIEVE_ONE: return "Take back one of your ships so you can expand";
+        case TurnPhase.CHOOSING_EXPANSION_ISLAND: return "Choose an island for expansion";
+        case TurnPhase.EXPANDING: return "Choose a beach to add population to";
+        case TurnPhase.READY_TO_SAIL: return "Choose a direction to sail";
+        case TurnPhase.LANDING: return "Choose a beach to land on (click or drag)";
+        case TurnPhase.GAME_OVER: return "Game over!";  // maybe don't need?
+        default: console.assert(false, "turn phase '" + turnPhase + "' cannot be handled");
+        }
+    }
+    
     presentSupplies(supplies) {
-        this.supplyView.innerHTML = "Ships in supply: " + supplies;
+        // Create boxes
+        if (!this.suppliesBox) {
+            this.suppliesBox = [];
+            for (let playerNo = 0; playerNo < supplies.length; playerNo++) {
+                this.suppliesBox[playerNo] = document.createElement("td");
+                this.suppliesBox[playerNo].classList = ["playerBox"];
+                this.suppliesBox[playerNo].innerHTML = "" + playerNo;
+                this.supplyViewRow.appendChild(this.suppliesBox[playerNo]);
+                this.suppliesBox[playerNo].style.color = COLOR_PLAYER[playerNo];
+            }
+        }
+        for (let playerNo = 0; playerNo < supplies.length; playerNo++) {
+            this.suppliesBox[playerNo].innerHTML = supplies[playerNo];
+        }
     }
 
     presentCurrentPlayer(currentPlayer, nrPlayers) {
@@ -783,7 +827,7 @@ class View {
             this.turnBox = [];
             for (let playerNo = 0; playerNo < nrPlayers; playerNo++) {
                 this.turnBox[playerNo] = document.createElement("td");
-                this.turnBox[playerNo].classList = ["turnBox"];
+                this.turnBox[playerNo].classList = ["playerBox"];
                 this.turnBox[playerNo].innerHTML = "" + playerNo;
                 this.turnViewRow.appendChild(this.turnBox[playerNo]);
             }
@@ -801,8 +845,8 @@ class View {
     }
 
     presentTilesLeft(nrIslandsLeft, nrSeaTilesLeft) {
-        this.islandsLeftView.innerHTML = nrIslandsLeft + " islands left";
-        this.seaTilesLeftView.innerHTML = nrSeaTilesLeft + " sea tiles left";
+        this.islandsLeftView.innerHTML = "&#x2B22;" + nrIslandsLeft;
+        this.seaTilesLeftView.innerHTML = "&#x2B22;" + nrSeaTilesLeft;
     }
 
     gameOver(winner, finalScores, finalTilesOccupied) {

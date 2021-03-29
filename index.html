@@ -14,20 +14,21 @@
   <body onresize="controller.draw();">
     <table id="extraControls">
       <tr>
-        <td id="turnView" rowspan="2">
-          <table id="turnViewTable">
+        <td id="turnView">
+          <table ="turnViewTable">
             <tr id="turnViewRow">
-              <td>Players:</td>
+              <td>Turn:</td>
             </tr>
           </table>
         </td>
-        <td id="hint" rowspan="2">Pick an island.</td>
-        <td id="supplyView" colspan="2">Unknown ships in supply</td>
-        <td>
-          <button onclick="controller.draw()">Redraw</button>
+        <td id="hint">Pick an island.</td>
+        <td id="supplyView">
+          <table class="supplyViewTable">
+            <tr id="supplyViewRow">
+              <td>Supply:</td>
+            </tr>
+          </table>
         </td>
-      </tr>
-      <tr>
         <td id="islandsLeftView">Unknown islands left</td>
         <td id="seaTilesLeftView">Unknown sea tiles left</td>
       </tr>
