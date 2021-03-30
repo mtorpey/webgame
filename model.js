@@ -327,6 +327,7 @@ class Model {
                     type: ChangeType.GAME_OVER,
                     finalScores: this.scores,
                     finalTilesOccupied: this.tilesOccupied,
+                    nrShips: this.nrShips,
                     winner: this.winner
                 });
             } else if (this.supplies[this.currentPlayer] === 0) {
@@ -484,7 +485,7 @@ class Model {
             nrShips[playerNo] = [];
             for (let tile of this.tiles) {
                 let s = tile.nrShipsOnTile(playerNo);
-                if (s > 0) {
+                if (s > 0 || tile.royalOwner === playerNo) {
                     console.assert(tile.value != undefined);
                     scores[playerNo] += tile.value;
                     tilesOccupied[playerNo] ++;

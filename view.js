@@ -61,7 +61,7 @@ class View {
         case ChangeType.SUPPLIES_CHANGED: this.presentSupplies(obj.supplies); break;
         case ChangeType.NEXT_PLAYER: this.presentCurrentPlayer(obj.currentPlayer); break;
         case ChangeType.VALID_MOVES: this.presentValidMoves(obj); break;
-        case ChangeType.GAME_OVER: this.gameOver(obj.winner, obj.finalScores, obj.finalTilesOccupied); break;
+        case ChangeType.GAME_OVER: this.gameOver(obj.winner, obj.finalScores, obj.finalTilesOccupied, obj.nrShips); break;
         default: console.assert(false, "change type '" + obj.type + "' cannot be handled");
         }
     }
@@ -300,7 +300,7 @@ class View {
         this.presentTilesLeft(model.nrIslandsLeft, model.nrSeaTilesLeft);
 
         if (model.winner != null) {
-            this.gameOver(model.winner, model.scores, model.finalTilesOccupied);
+            this.gameOver(model.winner, model.scores, model.finalTilesOccupied, model.nrShips);
         }
     }
 
@@ -849,10 +849,19 @@ class View {
         this.seaTilesLeftView.innerHTML = "&#x2B22;" + nrSeaTilesLeft;
     }
 
-    gameOver(winner, finalScores, finalTilesOccupied) {
-        this.turnView.innerHTML = "Game over!";
-        this.turnView.innerHTML += "<br>Final scores: " + finalScores;
-        this.turnView.innerHTML += "<br>Player " + winner + " wins!";
+    gameOver(winner, finalScores, finalTilesOccupied, nrShips) {
+        document.getElementById("turnViewLabel").innerHTML = "Final scores:"
+        // Reset colours
+        for (let playerNo = 0; playerNo < this.turnBox.length; playerNo++) {
+            this.turnBox[playerNo].style.color = COLOR_PLAYER[playerNo];
+            this.turnBox[playerNo].style.backgroundColor = null;
+            this.turnBox[playerNo].classList.remove("currentPlayer");
+            this.turnBox[playerNo].innerHTML = finalScores[playerNo];
+        }
+        // Highlight winner
+        this.turnBox[winner].style.backgroundColor = COLOR_PLAYER[winner];
+        this.turnBox[winner].style.color = COLOR_PLAYER_CONTRAST[winner];
+        this.turnBox[winner].classList.add("currentPlayer");
     }
 
     drawHex(col, row, side, strokeColor, fillColor) {
