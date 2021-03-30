@@ -23,6 +23,16 @@ const ChangeType = {
     GAME_OVER: "game over"
 }
 
+const ActionType = {
+    INITIAL_PLACEMENT: "initial placement",
+    RETRIEVE_ONE: "retrieve one",
+    SAIL_FROM_EXIT: "sail from exit",
+    CHOOSE_EXPANSION_ISLAND: "choose expansion island",
+    CLAIM_AS_ROYAL_ISLAND: "claim as royal island",
+    LAND_SHIP: "land ship",
+    EXPAND_AT_SLOT: "expand at slot"
+}
+
 const MAX_SUPPLY = 15;
 
 class Model {
@@ -722,14 +732,32 @@ class Model {
     }
 
     // Sending updates to the view
-    // TODO: replace this with socket.io when model is server-side
     listener;
-    registerChangeListener(listener) {
+    registerListener(listener) {
         this.listener = listener;
+        this.broadcastModel();
         this.broadcastChange(this.getValidMoves());
     }
     broadcastChange(obj) {
-        this.listener.modelChanged(obj);
+        this.listener("change", obj);
+    }
+    broadcastModel() {
+        this.listener("model", this);
+    }
+
+    // Receiving actions from the view
+    applyAction(obj) {
+        console.log("action", obj);
+        switch(obj.type) {
+        case ActionType.INITIAL_PLACEMENT: this.initialPlacement(obj.beachNo, obj.slotNo); break;
+        case ActionType.RETRIEVE_ONE: this.retrieveOne(obj.col, obj.row, obj.beachNo, obj.slotNo); break;
+        case ActionType.SAIL_FROM_EXIT: this.sailFromExit(obj.col, obj.row, obj.direction); break;
+        case ActionType.CHOOSE_EXPANSION_ISLAND: this.chooseExpansionIsland(obj.col, obj.row); break;
+        case ActionType.CLAIM_AS_ROYAL_ISLAND: this.claimAsRoyalIsland(obj.col, obj.row); break;
+        case ActionType.LAND_SHIP: this.landShip(obj.landingShipNo, obj.beachNo, obj.slotNo); break;
+        case ActionType.EXPAND_AT_SLOT: this.expandAtSlot(obj.beachNo, obj.slotNo); break;
+        default: console.assert(false, "Action type '" + obj.type + "' cannot be handled");
+        }
     }
 }
 
@@ -974,6 +1002,8 @@ class Beach {
         return false;
     }
 }
+
+module.exports = {Model};
 
 function hexNeighbor(col, row, direction) {
     let isEven = (col % 2 == 0) ? -1 : 0;

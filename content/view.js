@@ -43,6 +43,7 @@ class View {
     turnBox;
     suppliesBox;
 
+    latestModel;
     validMoves = {};
 
     /**
@@ -51,6 +52,7 @@ class View {
      * @param obj JSON object describing the changes
      */
     modelChanged(obj) {
+        console.log("change", obj);
         switch(obj.type) {
         case ChangeType.SHIP_ADDED: this.addShip(obj.col, obj.row, obj.beachNo, obj.slotNo, obj.playerNo); break;
         case ChangeType.SHIP_RETRIEVED: this.retrieveShip(obj.col, obj.row, obj.beachNo, obj.slotNo); break;
@@ -274,7 +276,8 @@ class View {
     }
 
     drawMap(model) {
-        console.log(model);
+        console.log("model", model);
+        this.latestModel = model;
 
         let canvas = this.canvas;
         let context = this.context;
