@@ -3,7 +3,7 @@
 var controller;
 
 window.onload = function() {
-    controller = new Controller(new View());
+    //controller = new Controller(new View());
 }
 
 //

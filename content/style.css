@@ -8,6 +8,17 @@ html, body {
     text-align: center;
 }
 
+#gameFinder>table {
+    border: 1pt white solid;
+    border-radius: 5pt;
+}
+
+#gameFinder>table>tr>th {
+    background-color: white;
+    color: darkblue;
+    border-radius: 5pt;
+}
+
 #extraControls {
     /*position: absolute;*/
     width: 100%;

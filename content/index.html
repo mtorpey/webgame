@@ -2,10 +2,9 @@
 <html lang=en>
 
   <script src="/socket.io/socket.io.js"></script>
-  <!--<script type="text/javascript" src="model.js"></script> -->
+  <script type="text/javascript" src="gameFinder.js"></script>
   <script type="text/javascript" src="view.js"></script>
   <script type="text/javascript" src="controller.js"></script>
-  <!--<script type="text/javascript" src="game.js"></script> -->
   <head>
     <meta charset=utf-8>
     <link rel="stylesheet" type="text/css" href="style.css">
@@ -22,7 +21,9 @@
             </tr>
           </table>
         </td>
-        <td id="hint">Pick an island.</td>
+        <td id="hint">
+          Find a game to join
+        </td>
         <td id="supplyView">
           <table class="supplyViewTable">
             <tr id="supplyViewRow">
@@ -30,8 +31,8 @@
             </tr>
           </table>
         </td>
-        <td id="islandsLeftView">Unknown islands left</td>
-        <td id="seaTilesLeftView">Unknown sea tiles left</td>
+        <td id="islandsLeftView">?</td>
+        <td id="seaTilesLeftView">?</td>
       </tr>
     </table>
 
@@ -39,6 +40,14 @@
       <canvas id="gameCanvas">
         This text is displayed if your browser does not support HTML5 Canvas.
       </canvas>
+    </div>
+
+    <div id="gameFinder">
+      <div id="nameEntry">
+        Enter your name:
+        <input id="nameField" type="text"/>
+        <button onclick="startGameFinder()">Submit</button>
+      </div>
     </div>
 
   </body>
