@@ -2,10 +2,6 @@
 
 var controller;
 
-window.onload = function() {
-    //controller = new Controller(new View());
-}
-
 //
 // CONST ENUMS: make sure these are the same as in model.js
 //
@@ -51,9 +47,9 @@ class Controller {
 
     latestModel;
 
-    constructor(view) {
+    constructor(view, socket) {
         this.view = view;
-        this.socket = io();
+        this.socket = socket;
 
         this.socket.on("server_says", (message) => {
             console.log("Server says", message);

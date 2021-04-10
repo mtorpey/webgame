@@ -27,14 +27,12 @@ var nextGameNo = 0;
 addGame();
 
 function addGame() {
-    openGames[nextGameNo] = nextGameNo;
-    nextGameNo++;
+    openGames.push(nextGameNo++);
 }
 
 function openGameInfo() {
     let out = [];
     for (let gameNumber of openGames) {
-        console.log("number", gameNumber);
         out.push({number: gameNumber, playerNames: allPlayerNamesInRoom("game-" + gameNumber)});
     }
     return out;
@@ -62,10 +60,8 @@ function allPlayerNamesInRoom(roomName) {
 }
 
 function broadcastOpenGameInfo() {
-    console.log("ALL IN LOBBY");
-    console.log(allPlayerNamesInRoom("lobby"));
+    console.log("ALL IN LOBBY", allPlayerNamesInRoom("lobby"));
     let info = openGameInfo();
-    console.log("info", info);
     io.emit("open-games", info);
     for (let game of openGames) {
         io.to("game-" + game.number).emit("open-games", info);
@@ -73,9 +69,21 @@ function broadcastOpenGameInfo() {
 }
 
 function joinGame(gameNumber, socket) {
-    socket.leave("lobby");
     socket.join("game-" + gameNumber);
+    socket.emit("joined", gameNumber);
     broadcastOpenGameInfo()
+}
+
+function tryToStartGame(gameNumber) {
+    let sendToAllPlayers = function(type, obj) {
+        io.to("game-" + gameNumber).emit(type, obj);
+    }
+    let game = new modelClass.Model(allPlayerNamesInRoom("game-" + gameNumber));
+    for (let socket of allSocketsInRoom("game-" + gameNumber)) {
+        socket.game = game;
+        socket.leave("lobby");
+    }
+    game.registerListener(sendToAllPlayers);
 }
 
 // Create sockets with new clients
@@ -101,9 +109,9 @@ io.on('connection', (socket) => {
 
     socket.on("player-name", name => {socket.playerName = name; socket.join("lobby"); console.log(socket.playerName); broadcastOpenGameInfo();});;
     socket.on("join", gameNumber => joinGame(gameNumber, socket));
-
-    socket.on("action", obj => model.applyAction(obj));
-    socket.on("request-model", () => model.broadcastModel());
+    socket.on("start", gameNumber => tryToStartGame(gameNumber));
+    socket.on("action", obj => socket.game.applyAction(obj));
+    socket.on("request-model", () => socket.game.broadcastModel());
 
     // Client disconnects
     socket.on('disconnect', () => {

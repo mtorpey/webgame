@@ -11,6 +11,7 @@ function startGameFinder() {
 
 class GameFinder {
     div;
+    gameNumber;
     name;
     socket;
 
@@ -21,6 +22,8 @@ class GameFinder {
         this.socket = io();
         this.socket.emit("player-name", this.name);
         this.socket.on("open-games", list => this.showOpenGames(list));
+        this.socket.on("joined", gameNumber => this.joinedGame(gameNumber));
+        this.socket.on("game-started", playerNumber => this.gameStarted(playerNumber));
     }
 
     /**
@@ -34,6 +37,7 @@ class GameFinder {
         for (let game of games) {
             let table = document.createElement("table"); this.div.appendChild(table);
             table.classList = ["gameFinder"];
+            table.id = "game-" + game.number;
             let headRow = document.createElement("tr"); table.appendChild(headRow);
             let titleCell = document.createElement("th"); headRow.appendChild(titleCell);
             titleCell.innerHTML = "Game " + game.number;
@@ -52,12 +56,34 @@ class GameFinder {
             let joinButton = document.createElement("button"); cell.appendChild(joinButton);
             joinButton.innerHTML = "Join game";
             joinButton.gameNumber = game.number;
-            joinButton.addEventListener("click", e => this.joinGame(e.target.gameNumber));
+            joinButton.onclick = (e => this.joinGame(e.target.gameNumber));
+        }
+        if (this.gameNumber != null) {
+            this.joinedGame(this.gameNumber);
         }
     }
 
     joinGame(number) {
         console.log("joining game", number);
         this.socket.emit("join", number);
+    }
+
+    startGame(number) {
+        console.log("starting game", number);
+        this.socket.emit("start", number);
+    }
+
+    joinedGame(gameNumber) {
+        this.gameNumber = gameNumber;
+        let joinButton = document.querySelector("#game-" + gameNumber + ">tr>td>button");// + ">tr>tr>button.joinButton");
+        console.assert(joinButton != undefined);
+        console.log(joinButton);
+        joinButton.innerHTML = "Start game";
+        joinButton.onclick = (e => this.startGame(e.target.gameNumber));
+    }
+
+    gameStarted(playerNumber) {
+        console.log("socket", this.socket);
+        controller = new Controller(new View(), this.socket);
     }
 }

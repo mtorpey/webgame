@@ -735,13 +735,16 @@ class Model {
     listener;
     registerListener(listener) {
         this.listener = listener;
+        this.listener("game-started");
         this.broadcastModel();
         this.broadcastChange(this.getValidMoves());
     }
     broadcastChange(obj) {
+        console.log("sending change");
         this.listener("change", obj);
     }
     broadcastModel() {
+        console.log("sending model");
         this.listener("model", this);
     }
 
