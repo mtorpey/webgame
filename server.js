@@ -79,9 +79,11 @@ function tryToStartGame(gameNumber) {
         io.to("game-" + gameNumber).emit(type, obj);
     }
     let game = new modelClass.Model(allPlayerNamesInRoom("game-" + gameNumber));
-    for (let socket of allSocketsInRoom("game-" + gameNumber)) {
-        socket.game = game;
-        socket.leave("lobby");
+    let sockets = allSocketsInRoom("game-" + gameNumber);
+    for (let playerNumber = 0; playerNumber < sockets.length; playerNumber++) {
+        sockets[playerNumber].game = game;
+        sockets[playerNumber].leave("lobby");
+        sockets[playerNumber].emit("game-started", playerNumber);
     }
     game.registerListener(sendToAllPlayers);
 }

@@ -742,6 +742,13 @@ class View {
         this.applySailButtons((b) => {b.disabled = true;});
         this.deleteLandingSlotGroup();
 
+        // If it's not your turn, stop here
+        console.log(obj);
+        console.log("current", obj.currentPlayer, "player", controller.playerNumber);
+        if (obj.currentPlayer != controller.playerNumber) {
+            return;
+        }
+
         // Enable the beach slot buttons described in the object
         if (obj.beachSlots) {
             for (let slot of obj.beachSlots) {

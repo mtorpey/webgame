@@ -84,6 +84,6 @@ class GameFinder {
 
     gameStarted(playerNumber) {
         console.log("socket", this.socket);
-        controller = new Controller(new View(), this.socket);
+        controller = new Controller(new View(), this.socket, playerNumber);
     }
 }

@@ -559,7 +559,12 @@ class Model {
 
         // Mark this as a "valid moves" object for sending to the view
         obj.type = ChangeType.VALID_MOVES;
+
+        // Include the current player and turn phase
+        obj.currentPlayer = this.currentPlayer;
+        console.log("current player", obj.currentPlayer);
         obj.turnPhase = this.turnPhase;
+
         return obj;
     }
 
@@ -735,7 +740,6 @@ class Model {
     listener;
     registerListener(listener) {
         this.listener = listener;
-        this.listener("game-started");
         this.broadcastModel();
         this.broadcastChange(this.getValidMoves());
     }

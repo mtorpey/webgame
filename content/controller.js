@@ -44,12 +44,14 @@ const ActionType = {
 class Controller {
     socket;
     view;
+    playerNumber;
 
     latestModel;
 
-    constructor(view, socket) {
+    constructor(view, socket, playerNumber) {
         this.view = view;
         this.socket = socket;
+        this.playerNumber = playerNumber;
 
         this.socket.on("server_says", (message) => {
             console.log("Server says", message);
