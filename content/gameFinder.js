@@ -57,10 +57,17 @@ class GameFinder {
             joinButton.innerHTML = "Join game";
             joinButton.gameNumber = game.number;
             joinButton.onclick = (e => this.joinGame(e.target.gameNumber));
+            if (this.gameNumber === game.number) {
+                this.showStartButton(this.gameNumber, game.canStartYet);
+            }
         }
-        if (this.gameNumber != null) {
-            this.joinedGame(this.gameNumber);
-        }
+        let addGameButton = document.createElement("button"); this.div.appendChild(addGameButton);
+        addGameButton.innerHTML = "New game";
+        addGameButton.onclick = () => this.addGame();
+    }
+
+    addGame() {
+        this.socket.emit("add-game");
     }
 
     joinGame(number) {
@@ -75,11 +82,15 @@ class GameFinder {
 
     joinedGame(gameNumber) {
         this.gameNumber = gameNumber;
+    }
+
+    showStartButton(gameNumber, canStartYet) {
         let joinButton = document.querySelector("#game-" + gameNumber + ">tr>td>button");// + ">tr>tr>button.joinButton");
         console.assert(joinButton != undefined);
         console.log(joinButton);
         joinButton.innerHTML = "Start game";
         joinButton.onclick = (e => this.startGame(e.target.gameNumber));
+        joinButton.disabled = !canStartYet;
     }
 
     gameStarted(playerNumber) {

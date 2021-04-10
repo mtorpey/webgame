@@ -1,5 +1,9 @@
 "use strict";
 
+// TODO: landing ships for other players
+// TODO: highlighting chosen island for other players
+// TODO: hint shows player's turn
+
 const COLOR_EMPTYSPACE = null;
 const COLOR_BACKGROUND = 'darkblue';
 const COLOR_GRID = null;
@@ -742,9 +746,7 @@ class View {
         this.applySailButtons((b) => {b.disabled = true;});
         this.deleteLandingSlotGroup();
 
-        // If it's not your turn, stop here
-        console.log(obj);
-        console.log("current", obj.currentPlayer, "player", controller.playerNumber);
+        // Is it your turn?
         if (obj.currentPlayer != controller.playerNumber) {
             return;
         }

@@ -8,9 +8,15 @@ html, body {
     text-align: center;
 }
 
+#gameFinder {
+    text-align: center;
+}
+
 #gameFinder>table {
     border: 1pt white solid;
     border-radius: 5pt;
+    margin-left: auto;
+    margin-right: auto;
 }
 
 #gameFinder>table>tr>th {

@@ -27,13 +27,17 @@ var nextGameNo = 0;
 addGame();
 
 function addGame() {
+    // TODO: move out of other games when joining one
     openGames.push(nextGameNo++);
+    broadcastOpenGameInfo();
 }
 
 function openGameInfo() {
     let out = [];
     for (let gameNumber of openGames) {
-        out.push({number: gameNumber, playerNames: allPlayerNamesInRoom("game-" + gameNumber)});
+        let playerNames = allPlayerNamesInRoom("game-" + gameNumber);
+        let canStartYet = (playerNames.length > 1);
+        out.push({number: gameNumber, playerNames: playerNames, canStartYet: canStartYet});
     }
     return out;
 }
@@ -62,16 +66,18 @@ function allPlayerNamesInRoom(roomName) {
 function broadcastOpenGameInfo() {
     console.log("ALL IN LOBBY", allPlayerNamesInRoom("lobby"));
     let info = openGameInfo();
-    io.emit("open-games", info);
+    io.to("lobby").emit("open-games", info);
     for (let game of openGames) {
         io.to("game-" + game.number).emit("open-games", info);
     }
 }
 
 function joinGame(gameNumber, socket) {
-    socket.join("game-" + gameNumber);
-    socket.emit("joined", gameNumber);
-    broadcastOpenGameInfo()
+    if (allSocketsInRoom("game-" + gameNumber).length < 6) {
+        socket.join("game-" + gameNumber);
+        socket.emit("joined", gameNumber);
+        broadcastOpenGameInfo()
+    }
 }
 
 function tryToStartGame(gameNumber) {
@@ -86,6 +92,8 @@ function tryToStartGame(gameNumber) {
         sockets[playerNumber].emit("game-started", playerNumber);
     }
     game.registerListener(sendToAllPlayers);
+    openGames.splice(openGames.indexOf(gameNumber), 1);  // Remove game
+    broadcastOpenGameInfo();
 }
 
 // Create sockets with new clients
@@ -110,6 +118,7 @@ io.on('connection', (socket) => {
     });
 
     socket.on("player-name", name => {socket.playerName = name; socket.join("lobby"); console.log(socket.playerName); broadcastOpenGameInfo();});;
+    socket.on("add-game", () => addGame());
     socket.on("join", gameNumber => joinGame(gameNumber, socket));
     socket.on("start", gameNumber => tryToStartGame(gameNumber));
     socket.on("action", obj => socket.game.applyAction(obj));
