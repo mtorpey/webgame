@@ -168,3 +168,8 @@ button.sailButton:disabled {
     opacity: 0.0;
     z-index: -1;
 }
+
+button.otherPlayerSelectable {
+    opacity: 0.8 !important;
+    z-index: 1 !important;
+}

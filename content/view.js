@@ -730,8 +730,17 @@ class View {
     presentValidMoves(obj = this.validMoves) {
         this.validMoves = obj;
 
+        // Is it your turn?
+        let yourTurn = (obj.currentPlayer != controller.playerNumber)
+
         // Show the message
-        this.presentHint(this.getHintFromTurnPhase(obj.turnPhase));
+        let hint;
+        if (yourTurn) {
+            hint = this.getHintFromTurnPhase(obj.turnPhase);
+        } else {
+            hint = "Player " + obj.currentPlayer + "'s turn";
+        }
+        this.presentHint(hint);
 
         // Disable all beach slot buttons
         this.applySlotButtons((b) => {
@@ -743,16 +752,11 @@ class View {
         });
         this.applyIslandNameButtons((b) => {b.disabled = true;});
         this.applyRoyalIslandButtons((b) => {b.disabled = true;});
-        this.applySailButtons((b) => {b.disabled = true;});
+        this.applySailButtons((b) => {b.disabled = true; b.classList.remove("otherPlayerSelectable");});
         this.deleteLandingSlotGroup();
 
-        // Is it your turn?
-        if (obj.currentPlayer != controller.playerNumber) {
-            return;
-        }
-
         // Enable the beach slot buttons described in the object
-        if (obj.beachSlots) {
+        if (obj.beachSlots && yourTurn) {
             for (let slot of obj.beachSlots) {
                 let button = this.getSlotButton(slot.col, slot.row, slot.beachNo, slot.slotNo);
                 button.disabled = false;
@@ -765,7 +769,7 @@ class View {
         }
 
         // Islands that can be selected for expansion
-        if (obj.expandableIslands) {
+        if (obj.expandableIslands && yourTurn) {
             for (let island of obj.expandableIslands) {
                 let button = this.getIslandNameButton(island.col, island.row);
                 button.disabled = false;
@@ -781,17 +785,28 @@ class View {
                     //exit.beachNo,  // this shouldn't be necessary
                     exit.exitDirection
                 );
-                button.disabled = false;
+                if (yourTurn) {
+                    button.disabled = false;
+                } else {
+                    button.classList.add("otherPlayerSelectable");
+                }
             }
         }
 
         // Ships landing at island
         if (obj.landingShips) {
             this.createLandingSlotGroup(obj.landingCol, obj.landingRow, obj.landingShips);
+            if (!yourTurn) {
+                let landingGroup = document.querySelector("#landingGroup");
+                for (let button of landingGroup.childNodes) {
+                    console.log(button);
+                    button.disabled = true;
+                }
+            }
         }
 
         // CLaiming as royal island
-        if (obj.claimableIslands) {
+        if (obj.claimableIslands && yourTurn) {
             for (let island of obj.claimableIslands) {
                 let button = this.getRoyalIslandButton(island.col, island.row);
                 button.disabled = false;
