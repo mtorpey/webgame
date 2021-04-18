@@ -107,10 +107,17 @@ function applyAction(socket, obj) {
     socket.join("game-" + obj.gameNumber);
 }
 
+function broadcastModel(socket, gameNumber) {
+    gamesInProgress[gameNumber].broadcastModel();
+
+    // Socket seems to think it's in this game, so add it if necessary
+    // (this maybe helps recover from disconnects?)
+    socket.join("game-" + obj.gameNumber);
+}
+
 // Create sockets with new clients
 io.on('connection', (socket) => {
     console.log('a user connected');
-
 
     let send_to_client = function(type, obj) {
         socket.emit(type, obj);
@@ -133,7 +140,7 @@ io.on('connection', (socket) => {
     socket.on("join", gameNumber => joinGame(gameNumber, socket));
     socket.on("start", gameNumber => tryToStartGame(gameNumber));
     socket.on("action", obj => applyAction(socket, obj));
-    socket.on("request-model", gameNumber => gamesInProgress[gameNumber].broadcastModel());
+    socket.on("request-model", gameNumber => broadcastModel(socket, gameNumber));
 
     // Client disconnects
     socket.on('disconnect', () => {
