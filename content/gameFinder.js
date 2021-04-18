@@ -18,7 +18,7 @@ class GameFinder {
     constructor(name) {
         this.name = name;
         this.div = document.getElementById("gameFinder");
-        this.div.innerHTML = "Fubdubg gane...";
+        this.div.innerHTML = "Finding gane...";
         this.socket = io();
         this.socket.emit("player-name", this.name);
         this.socket.on("open-games", list => this.showOpenGames(list));
@@ -95,6 +95,6 @@ class GameFinder {
 
     gameStarted(playerNumber) {
         console.log("socket", this.socket);
-        controller = new Controller(new View(), this.socket, playerNumber);
+        controller = new Controller(new View(), this.socket, this.gameNumber, playerNumber);
     }
 }

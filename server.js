@@ -26,6 +26,8 @@ var openGames = [];
 var nextGameNo = 0;
 addGame();
 
+var gamesInProgress = [];
+
 function addGame() {
     // TODO: move out of other games when joining one
     openGames.push(nextGameNo++);
@@ -93,6 +95,7 @@ function tryToStartGame(gameNumber) {
     }
     game.registerListener(sendToAllPlayers);
     openGames.splice(openGames.indexOf(gameNumber), 1);  // Remove game
+    gamesInProgress[gameNumber] = game;
     broadcastOpenGameInfo();
 }
 
@@ -121,8 +124,8 @@ io.on('connection', (socket) => {
     socket.on("add-game", () => addGame());
     socket.on("join", gameNumber => joinGame(gameNumber, socket));
     socket.on("start", gameNumber => tryToStartGame(gameNumber));
-    socket.on("action", obj => socket.game.applyAction(obj));
-    socket.on("request-model", () => socket.game.broadcastModel());
+    socket.on("action", obj => gamesInProgress[obj.gameNumber].applyAction(obj));
+    socket.on("request-model", gameNumber => gamesInProgress[gameNumber].broadcastModel());
 
     // Client disconnects
     socket.on('disconnect', () => {

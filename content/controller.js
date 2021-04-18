@@ -44,13 +44,15 @@ const ActionType = {
 class Controller {
     socket;
     view;
+    gameNumber;
     playerNumber;
 
     latestModel;
 
-    constructor(view, socket, playerNumber) {
+    constructor(view, socket, gameNumber, playerNumber) {
         this.view = view;
         this.socket = socket;
+        this.gameNumber = gameNumber;
         this.playerNumber = playerNumber;
 
         this.socket.on("server_says", (message) => {
@@ -65,13 +67,15 @@ class Controller {
     }
 
     sendAction(obj) {
+        obj.gameNumber = this.gameNumber;
+        obj.playerNumber = this.playerNumber;
         console.log("sending action", obj);
         this.socket.emit("action", obj);
     }
 
     draw() {
         console.log("requesting latest model");
-        this.socket.emit("request-model");
+        this.socket.emit("request-model", this.gameNumber);
     }
 
     deleteButtons() {
