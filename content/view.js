@@ -1,8 +1,5 @@
 "use strict";
-
-// TODO: landing ships for other players
 // TODO: highlighting chosen island for other players
-// TODO: hint shows player's turn
 
 const COLOR_EMPTYSPACE = null;
 const COLOR_BACKGROUND = 'darkblue';
@@ -735,7 +732,7 @@ class View {
 
         // Show the message
         let hint;
-        if (yourTurn) {
+        if (yourTurn || obj.turnPhase === TurnPhase.GAME_OVER) {
             hint = this.getHintFromTurnPhase(obj.turnPhase);
         } else {
             hint = "Player " + obj.currentPlayer + "'s turn";
@@ -826,7 +823,7 @@ class View {
         case TurnPhase.EXPANDING: return "Choose a beach to add population to";
         case TurnPhase.READY_TO_SAIL: return "Choose a direction to sail";
         case TurnPhase.LANDING: return "Choose a beach to land on (click or drag)";
-        case TurnPhase.GAME_OVER: return "Game over!";  // maybe don't need?
+        case TurnPhase.GAME_OVER: return "Game over!";
         default: console.assert(false, "turn phase '" + turnPhase + "' cannot be handled");
         }
     }
