@@ -112,7 +112,7 @@ function broadcastModel(socket, gameNumber) {
 
     // Socket seems to think it's in this game, so add it if necessary
     // (this maybe helps recover from disconnects?)
-    socket.join("game-" + obj.gameNumber);
+    socket.join("game-" + gameNumber);
 }
 
 // Create sockets with new clients
