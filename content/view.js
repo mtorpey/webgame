@@ -728,7 +728,7 @@ class View {
         this.validMoves = obj;
 
         // Is it your turn?
-        let yourTurn = (obj.currentPlayer != controller.playerNumber)
+        let yourTurn = (obj.currentPlayer === controller.playerNumber)
 
         // Show the message
         let hint;
