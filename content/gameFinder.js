@@ -18,7 +18,7 @@ class GameFinder {
     constructor(name) {
         this.name = name;
         this.div = document.getElementById("gameFinder");
-        this.div.innerHTML = "Finding gane...";
+        this.div.innerHTML = "Finding Game...";
         this.socket = io();
         this.socket.emit("player-name", this.name);
         this.socket.on("open-games", list => this.showOpenGames(list));
