@@ -740,18 +740,7 @@ class View {
         this.presentHint(hint);
 
         // Disable all beach slot buttons
-        this.applySlotButtons((b) => {
-            b.disabled = true;
-            b.ondragover = null;
-            b.ondragenter = null;
-            b.ondragleave = null;
-            b.ondrop = null;
-        });
-        this.applyIslandNameButtons((b) => {b.disabled = true;});
-        this.applyRoyalIslandButtons((b) => {b.disabled = true;});
-        this.applySailButtons((b) => {b.disabled = true; b.classList.remove("otherPlayerSelectable");});
-        this.deleteLandingSlotGroup();
-
+        this.disableAllBeachSlotButtons()
         // Enable the beach slot buttons described in the object
         if (obj.beachSlots && yourTurn) {
             for (let slot of obj.beachSlots) {
@@ -802,13 +791,27 @@ class View {
             }
         }
 
-        // CLaiming as royal island
+        // Claiming as royal island
         if (obj.claimableIslands && yourTurn) {
             for (let island of obj.claimableIslands) {
                 let button = this.getRoyalIslandButton(island.col, island.row);
                 button.disabled = false;
             }
         }
+    }
+
+    disableAllBeachSlotButtons() {
+        this.applySlotButtons((b) => {
+            b.disabled = true;
+            b.ondragover = null;
+            b.ondragenter = null;
+            b.ondragleave = null;
+            b.ondrop = null;
+        });
+        this.applyIslandNameButtons((b) => {b.disabled = true;});
+        this.applyRoyalIslandButtons((b) => {b.disabled = true;});
+        this.applySailButtons((b) => {b.disabled = true; b.classList.remove("otherPlayerSelectable");});
+        this.deleteLandingSlotGroup();
     }
 
     presentHint(string) {

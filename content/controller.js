@@ -67,6 +67,7 @@ class Controller {
     }
 
     sendAction(obj) {
+        this.view.disableAllBeachSlotButtons();
         obj.gameNumber = this.gameNumber;
         obj.playerNumber = this.playerNumber;
         console.log("sending action", obj);
