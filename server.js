@@ -7,7 +7,7 @@ var app = express();
 const http = require('http').createServer(app);
 const io = require('socket.io')(http);
 
-const SERVER_PORT = 3000;
+const SERVER_PORT = 21802;
 
 // Serve all pages from "content"
 app.use(express.static('content/'));

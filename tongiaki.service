@@ -1,0 +1,11 @@
+[Unit]
+Description=Tongiaki game server
+After=network.target
+
+[Service]
+Restart=always
+WorkingDirectory=/var/www/tongiaki
+ExecStart=node server.js
+
+[Install]
+WantedBy=multi-user.target
